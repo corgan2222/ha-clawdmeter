@@ -4,7 +4,12 @@ from collections.abc import Generator
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
+from homeassistant.const import CONF_ACCESS_TOKEN
 import pytest
+from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.syrupy import HomeAssistantSnapshotExtension
+from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
+from syrupy.assertion import SnapshotAssertion
 
 from custom_components.clawdmeter.api import OAuthChallenge
 from custom_components.clawdmeter.const import (
@@ -18,10 +23,6 @@ from custom_components.clawdmeter.const import (
     PROFILE_ENDPOINT,
     USAGE_ENDPOINT,
 )
-from homeassistant.const import CONF_ACCESS_TOKEN
-
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
 ACCOUNT_EMAIL = "corgan@example.com"
 
@@ -45,6 +46,12 @@ def auto_enable_custom_integrations(
 @pytest.fixture(autouse=True)
 def _mock_storage(hass_storage: dict[str, Any]) -> None:
     """Back the coordinator's Store with in-memory storage in every test."""
+
+
+@pytest.fixture
+def snapshot(snapshot: SnapshotAssertion) -> SnapshotAssertion:
+    """Apply the Home Assistant snapshot extension (serializers + snapshots/ dir)."""
+    return snapshot.use_extension(HomeAssistantSnapshotExtension)
 
 
 @pytest.fixture
