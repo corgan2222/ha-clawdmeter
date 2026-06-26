@@ -1,4 +1,4 @@
 # Test dependencies for the Clawdmeter custom integration.
 # pytest-homeassistant-custom-component pins a matching Home Assistant version
 # transitively; pin it to the release that matches the HA version you target.
-pytest-homeassistant-custom-component
+pytest-homeassistant-custom-component==0.13.340

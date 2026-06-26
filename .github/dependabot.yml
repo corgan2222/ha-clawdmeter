@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    ignore:
+      # homeassistant is pinned transitively via pytest-homeassistant-custom-component
+      # and tracked through hacs.json; do not bump it independently.
+      - dependency-name: "homeassistant"
