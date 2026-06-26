@@ -1,0 +1,52 @@
+blueprint:
+  name: Clawdmeter usage alert
+  author: corgan2222
+  homeassistant:
+    min_version: 2024.6.0
+  description: >-
+    Run an action (for example, send a notification) when a Clawdmeter usage
+    sensor rises above a threshold - e.g. session usage over 80 %.
+  domain: automation
+  input:
+    usage_sensor:
+      name: Usage sensor
+      description: A Clawdmeter percentage sensor, such as Session usage.
+      selector:
+        entity:
+          filter:
+            - integration: clawdmeter
+              domain: sensor
+    threshold:
+      name: Threshold
+      description: Trigger when the sensor goes above this percentage.
+      default: 80
+      selector:
+        number:
+          min: 1
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+          mode: slider
+    duration:
+      name: For
+      description: Only trigger after the value stays above the threshold this long.
+      default:
+        minutes: 0
+      selector:
+        duration: {}
+    actions:
+      name: Actions
+      description: What to do - for example, call a notify action.
+      selector:
+        action: {}
+
+mode: single
+max_exceeded: silent
+
+triggers:
+  - trigger: numeric_state
+    entity_id: !input usage_sensor
+    above: !input threshold
+    for: !input duration
+
+actions: !input actions

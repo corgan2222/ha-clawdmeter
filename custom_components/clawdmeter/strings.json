@@ -1,0 +1,169 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "This Claude account is already set up.",
+      "reauth_successful": "[%key:common::config_flow::abort::reauth_successful%]",
+      "reconfigure_successful": "[%key:common::config_flow::abort::reconfigure_successful%]"
+    },
+    "error": {
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "exchange_failed": "That code could not be exchanged for a token. Please try again.",
+      "missing_code": "Paste the authorization code to continue."
+    },
+    "step": {
+      "reauth_confirm": {
+        "data": {
+          "auth_code": "[%key:component::clawdmeter::config::step::user::data::auth_code%]"
+        },
+        "data_description": {
+          "auth_code": "[%key:component::clawdmeter::config::step::user::data_description::auth_code%]"
+        },
+        "description": "The stored token was rejected. Open [the Anthropic authorization page]({url}), sign in as the same account and paste the new code below.",
+        "title": "Re-authenticate your Claude account"
+      },
+      "reconfigure": {
+        "data": {
+          "auth_code": "[%key:component::clawdmeter::config::step::user::data::auth_code%]"
+        },
+        "data_description": {
+          "auth_code": "[%key:component::clawdmeter::config::step::user::data_description::auth_code%]"
+        },
+        "description": "Open [the Anthropic authorization page]({url}) and approve access. Sign in as whichever account this entry should track from now on, then paste the new code below.",
+        "title": "Reconfigure your Claude account"
+      },
+      "user": {
+        "data": {
+          "auth_code": "Authorization code"
+        },
+        "data_description": {
+          "auth_code": "The code Anthropic displays after you approve access."
+        },
+        "description": "Open [the Anthropic authorization page]({url}) and approve access. Anthropic then shows a code (it may contain a `#`) - paste the whole thing below.",
+        "title": "Connect your Claude account"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "extra_enabled": {
+        "name": "Extra usage enabled"
+      },
+      "runway_over": {
+        "name": "Limit reached before reset"
+      }
+    },
+    "sensor": {
+      "account": {
+        "name": "Account"
+      },
+      "animation_group": {
+        "name": "Animation group",
+        "state": {
+          "active": "Active",
+          "heavy": "Heavy",
+          "idle": "Idle",
+          "normal": "Normal"
+        }
+      },
+      "burn_rate_30m": {
+        "name": "Burn rate (30 min)"
+      },
+      "burn_rate_5m": {
+        "name": "Burn rate (5 min)"
+      },
+      "burn_rate_per_min": {
+        "name": "Burn rate per minute"
+      },
+      "extra_credits": {
+        "name": "Extra usage credits"
+      },
+      "extra_limit": {
+        "name": "Extra usage limit"
+      },
+      "extra_severity": {
+        "name": "Extra usage status",
+        "state": {
+          "critical": "Critical",
+          "normal": "Normal",
+          "warning": "Warning"
+        }
+      },
+      "extra_usage": {
+        "name": "Extra usage"
+      },
+      "limit_eta": {
+        "name": "Session limit ETA"
+      },
+      "opus_reset": {
+        "name": "Weekly Opus reset"
+      },
+      "opus_usage": {
+        "name": "Weekly Opus usage"
+      },
+      "pace_frame": {
+        "name": "Pace frame",
+        "state": {
+          "green": "Green",
+          "orange": "Orange",
+          "red": "Red"
+        }
+      },
+      "plan": {
+        "name": "Plan"
+      },
+      "runway_margin": {
+        "name": "Runway margin"
+      },
+      "runway_pace": {
+        "name": "Runway pace"
+      },
+      "session_peak_today": {
+        "name": "Session usage peak today"
+      },
+      "session_reset": {
+        "name": "Session reset"
+      },
+      "session_reset_in": {
+        "name": "Session resets in"
+      },
+      "session_usage": {
+        "name": "Session usage"
+      },
+      "sonnet_reset": {
+        "name": "Weekly Sonnet reset"
+      },
+      "sonnet_usage": {
+        "name": "Weekly Sonnet usage"
+      },
+      "time_to_limit": {
+        "name": "Time to limit"
+      },
+      "usage_rate": {
+        "name": "Usage rate"
+      },
+      "week_pace": {
+        "name": "Weekly pace"
+      },
+      "week_reset": {
+        "name": "Weekly reset"
+      },
+      "week_usage": {
+        "name": "Weekly usage"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "scan_interval": "Update interval (seconds)"
+        },
+        "data_description": {
+          "scan_interval": "Seconds between updates (60-3600). The default is 300."
+        },
+        "description": "How often to poll the Claude usage API. The API is rate limited, so keep this reasonably high.",
+        "title": "Clawdmeter options"
+      }
+    }
+  }
+}

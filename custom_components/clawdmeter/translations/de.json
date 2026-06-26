@@ -1,0 +1,169 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Dieses Claude-Konto ist bereits eingerichtet.",
+            "reauth_successful": "Die erneute Authentifizierung war erfolgreich",
+            "reconfigure_successful": "Die Neukonfiguration war erfolgreich"
+        },
+        "error": {
+            "cannot_connect": "Verbindung fehlgeschlagen",
+            "exchange_failed": "Der Code konnte nicht gegen ein Token eingetauscht werden. Bitte versuche es erneut.",
+            "missing_code": "Füge den Autorisierungscode ein, um fortzufahren."
+        },
+        "step": {
+            "reauth_confirm": {
+                "data": {
+                    "auth_code": "Autorisierungscode"
+                },
+                "data_description": {
+                    "auth_code": "Der Code, den Anthropic nach der Bestätigung des Zugriffs anzeigt."
+                },
+                "description": "Das gespeicherte Token wurde abgelehnt. Öffne [die Anthropic-Autorisierungsseite]({url}), melde dich mit demselben Konto an und füge den neuen Code unten ein.",
+                "title": "Claude-Konto erneut authentifizieren"
+            },
+            "reconfigure": {
+                "data": {
+                    "auth_code": "Autorisierungscode"
+                },
+                "data_description": {
+                    "auth_code": "Der Code, den Anthropic nach der Bestätigung des Zugriffs anzeigt."
+                },
+                "description": "Öffne [die Anthropic-Autorisierungsseite]({url}) und bestätige den Zugriff. Melde dich mit dem Konto an, das dieser Eintrag künftig verfolgen soll, und füge den neuen Code unten ein.",
+                "title": "Claude-Konto neu konfigurieren"
+            },
+            "user": {
+                "data": {
+                    "auth_code": "Autorisierungscode"
+                },
+                "data_description": {
+                    "auth_code": "Der Code, den Anthropic nach der Bestätigung des Zugriffs anzeigt."
+                },
+                "description": "Öffne [die Anthropic-Autorisierungsseite]({url}) und bestätige den Zugriff. Anthropic zeigt anschließend einen Code an (er kann ein `#` enthalten) - füge die komplette Zeichenfolge unten ein.",
+                "title": "Mit deinem Claude-Konto verbinden"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "Aktualisierungsintervall (Sekunden)"
+                },
+                "data_description": {
+                    "scan_interval": "Sekunden zwischen Aktualisierungen (60-3600). Der Standard ist 300."
+                },
+                "description": "Wie oft die Claude-Nutzungs-API abgefragt wird. Die API ist ratenbegrenzt, halte den Wert daher ausreichend hoch.",
+                "title": "Clawdmeter-Optionen"
+            }
+        }
+    },
+    "entity": {
+        "binary_sensor": {
+            "extra_enabled": {
+                "name": "Zusatznutzung aktiviert"
+            },
+            "runway_over": {
+                "name": "Limit vor Reset erreicht"
+            }
+        },
+        "sensor": {
+            "account": {
+                "name": "Konto"
+            },
+            "plan": {
+                "name": "Abo"
+            },
+            "animation_group": {
+                "name": "Animationsgruppe",
+                "state": {
+                    "active": "Aktiv",
+                    "heavy": "Stark",
+                    "idle": "Leerlauf",
+                    "normal": "Normal"
+                }
+            },
+            "burn_rate_30m": {
+                "name": "Verbrauchsrate (30 Min.)"
+            },
+            "burn_rate_5m": {
+                "name": "Verbrauchsrate (5 Min.)"
+            },
+            "burn_rate_per_min": {
+                "name": "Verbrauchsrate pro Minute"
+            },
+            "limit_eta": {
+                "name": "Limit erreicht um"
+            },
+            "session_peak_today": {
+                "name": "Sitzungsnutzung Tageshoch"
+            },
+            "extra_credits": {
+                "name": "Zusatznutzung Guthaben"
+            },
+            "extra_limit": {
+                "name": "Zusatznutzung Limit"
+            },
+            "extra_usage": {
+                "name": "Zusatznutzung"
+            },
+            "extra_severity": {
+                "name": "Zusatznutzung Status",
+                "state": {
+                    "normal": "Normal",
+                    "warning": "Warnung",
+                    "critical": "Kritisch"
+                }
+            },
+            "pace_frame": {
+                "name": "Tempo-Rahmen",
+                "state": {
+                    "green": "Grün",
+                    "orange": "Orange",
+                    "red": "Rot"
+                }
+            },
+            "runway_margin": {
+                "name": "Runway-Puffer"
+            },
+            "runway_pace": {
+                "name": "Runway-Tempo"
+            },
+            "session_reset": {
+                "name": "Sitzungs-Reset"
+            },
+            "session_reset_in": {
+                "name": "Sitzung wird zurückgesetzt in"
+            },
+            "session_usage": {
+                "name": "Sitzungsnutzung"
+            },
+            "sonnet_reset": {
+                "name": "Wöchentlicher Sonnet-Reset"
+            },
+            "sonnet_usage": {
+                "name": "Wöchentliche Sonnet-Nutzung"
+            },
+            "opus_reset": {
+                "name": "Wöchentlicher Opus-Reset"
+            },
+            "opus_usage": {
+                "name": "Wöchentliche Opus-Nutzung"
+            },
+            "time_to_limit": {
+                "name": "Zeit bis zum Limit"
+            },
+            "usage_rate": {
+                "name": "Nutzungsrate"
+            },
+            "week_pace": {
+                "name": "Wöchentliches Tempo"
+            },
+            "week_reset": {
+                "name": "Wöchentlicher Reset"
+            },
+            "week_usage": {
+                "name": "Wöchentliche Nutzung"
+            }
+        }
+    }
+}

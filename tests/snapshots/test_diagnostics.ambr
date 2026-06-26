@@ -1,0 +1,96 @@
+# serializer version: 1
+# name: test_diagnostics
+  dict({
+    'config_entry': dict({
+      'data': dict({
+        'access_token': '**REDACTED**',
+        'account_email': '**REDACTED**',
+        'account_name': '**REDACTED**',
+        'expires_at': 9999999999.0,
+        'plan': 'Max',
+        'refresh_token': '**REDACTED**',
+      }),
+      'options': dict({
+      }),
+    }),
+    'raw_profile_api': dict({
+      'account': dict({
+        'display_name': '**REDACTED**',
+        'email': '**REDACTED**',
+        'has_claude_max': True,
+      }),
+    }),
+    'raw_usage_api': dict({
+      'extra_usage': dict({
+        'currency': 'EUR',
+        'decimal_places': 2,
+        'is_enabled': True,
+        'monthly_limit': 5000,
+        'used_credits': 1234,
+        'utilization': 12,
+      }),
+      'five_hour': dict({
+        'resets_at': '2026-06-25T15:00:00+00:00',
+        'utilization': 20,
+      }),
+      'seven_day': dict({
+        'resets_at': '2026-07-01T12:00:00+00:00',
+        'utilization': 40,
+      }),
+      'seven_day_opus': dict({
+        'resets_at': '2026-06-29T12:00:00+00:00',
+        'utilization': 8,
+      }),
+      'seven_day_sonnet': dict({
+        'resets_at': '2026-06-30T12:00:00+00:00',
+        'utilization': 15,
+      }),
+      'spend': dict({
+        'enabled': True,
+        'limit': dict({
+          'amount_minor': 5000,
+          'currency': 'EUR',
+          'exponent': 2,
+        }),
+        'percent': 12,
+        'severity': 'normal',
+        'used': dict({
+          'amount_minor': 1234,
+          'currency': 'EUR',
+          'exponent': 2,
+        }),
+      }),
+    }),
+    'stored': dict({
+      'account_name': '**REDACTED**',
+      'animation_group': 'idle',
+      'burn_rate_fast': 0.0,
+      'burn_rate_slow': 0.0,
+      'extra_credits': 12.34,
+      'extra_currency': 'EUR',
+      'extra_enabled': True,
+      'extra_limit': 50.0,
+      'extra_severity': 'normal',
+      'extra_usage': 12,
+      'limit_eta': None,
+      'opus_reset': HAFakeDatetime(2026, 6, 29, 12, 0, tzinfo=datetime.timezone.utc),
+      'opus_usage': 8,
+      'pace_frame': 'green',
+      'plan': 'Max',
+      'runway_margin': None,
+      'runway_over': False,
+      'runway_pace': 0.0,
+      'session_peak_today': 20,
+      'session_reset': HAFakeDatetime(2026, 6, 25, 15, 0, tzinfo=datetime.timezone.utc),
+      'session_reset_in': 180.0,
+      'session_usage': 20,
+      'sonnet_reset': HAFakeDatetime(2026, 6, 30, 12, 0, tzinfo=datetime.timezone.utc),
+      'sonnet_usage': 15,
+      'time_to_limit': None,
+      'usage_rate': 0.0,
+      'week_pace': 25.7,
+      'week_reset': HAFakeDatetime(2026, 7, 1, 12, 0, tzinfo=datetime.timezone.utc),
+      'week_usage': 40,
+    }),
+  })
+# ---

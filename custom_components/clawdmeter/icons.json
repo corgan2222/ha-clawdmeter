@@ -1,0 +1,95 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "extra_enabled": {
+        "default": "mdi:credit-card-check-outline"
+      },
+      "runway_over": {
+        "default": "mdi:alert-octagon-outline"
+      }
+    },
+    "sensor": {
+      "account": {
+        "default": "mdi:account-circle-outline"
+      },
+      "animation_group": {
+        "default": "mdi:movie-open-play-outline"
+      },
+      "burn_rate_30m": {
+        "default": "mdi:fire-alert"
+      },
+      "burn_rate_5m": {
+        "default": "mdi:fire"
+      },
+      "burn_rate_per_min": {
+        "default": "mdi:speedometer-medium"
+      },
+      "extra_credits": {
+        "default": "mdi:credit-card-clock-outline"
+      },
+      "extra_limit": {
+        "default": "mdi:credit-card-settings-outline"
+      },
+      "extra_severity": {
+        "default": "mdi:alert-circle-outline"
+      },
+      "extra_usage": {
+        "default": "mdi:credit-card-outline"
+      },
+      "limit_eta": {
+        "default": "mdi:clock-alert-outline"
+      },
+      "opus_reset": {
+        "default": "mdi:calendar-refresh"
+      },
+      "opus_usage": {
+        "default": "mdi:calendar-week-begin"
+      },
+      "pace_frame": {
+        "default": "mdi:image-frame"
+      },
+      "plan": {
+        "default": "mdi:crown-outline"
+      },
+      "runway_margin": {
+        "default": "mdi:ruler"
+      },
+      "runway_pace": {
+        "default": "mdi:airplane-takeoff"
+      },
+      "session_peak_today": {
+        "default": "mdi:chart-line"
+      },
+      "session_reset": {
+        "default": "mdi:timer-refresh"
+      },
+      "session_reset_in": {
+        "default": "mdi:timer-outline"
+      },
+      "session_usage": {
+        "default": "mdi:timer-sand"
+      },
+      "sonnet_reset": {
+        "default": "mdi:calendar-refresh"
+      },
+      "sonnet_usage": {
+        "default": "mdi:calendar-week-begin"
+      },
+      "time_to_limit": {
+        "default": "mdi:timer-alert-outline"
+      },
+      "usage_rate": {
+        "default": "mdi:trending-up"
+      },
+      "week_pace": {
+        "default": "mdi:speedometer"
+      },
+      "week_reset": {
+        "default": "mdi:calendar-refresh"
+      },
+      "week_usage": {
+        "default": "mdi:calendar-week"
+      }
+    }
+  }
+}
