@@ -3,16 +3,17 @@
 from unittest.mock import patch
 
 from freezegun.api import FrozenDateTimeFactory
-import pytest
-from syrupy.assertion import SnapshotAssertion
-
 from homeassistant.const import EntityCategory, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+import pytest
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    snapshot_platform,
+)
+from syrupy.assertion import SnapshotAssertion
 
 from . import setup_integration
-
-from pytest_homeassistant_custom_component.common import MockConfigEntry, snapshot_platform
 
 DIAGNOSTIC = "sensor.claude_corgan_max_session_usage"
 COMPUTED = "sensor.claude_corgan_max_burn_rate_5_min"

@@ -3,7 +3,12 @@
 from typing import Any
 
 from aiohttp import ClientError
+from homeassistant.config_entries import SOURCE_REAUTH, ConfigEntryState
+from homeassistant.const import CONF_ACCESS_TOKEN
+from homeassistant.core import HomeAssistant
 import pytest
+from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
 from custom_components.clawdmeter.const import (
     CONF_EXPIRES_AT,
@@ -11,15 +16,9 @@ from custom_components.clawdmeter.const import (
     OAUTH_TOKEN_URL,
     USAGE_ENDPOINT,
 )
-from homeassistant.config_entries import SOURCE_REAUTH, ConfigEntryState
-from homeassistant.const import CONF_ACCESS_TOKEN
-from homeassistant.core import HomeAssistant
 
 from . import setup_integration
 from .conftest import TOKEN_RESPONSE
-
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
 
 @pytest.mark.usefixtures("mock_usage")

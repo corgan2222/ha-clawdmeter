@@ -5,16 +5,15 @@ import logging
 from typing import Any
 
 from freezegun.api import FrozenDateTimeFactory
-import pytest
-
-from custom_components.clawdmeter.const import USAGE_ENDPOINT
 from homeassistant.const import EVENT_HOMEASSISTANT_FINAL_WRITE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
-
-from . import setup_integration
-
+import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
+
+from custom_components.clawdmeter.const import USAGE_ENDPOINT
+
+from . import setup_integration
 
 BURN_5M = "sensor.claude_corgan_max_burn_rate_5_min"
 BURN_30M = "sensor.claude_corgan_max_burn_rate_30_min"
@@ -530,7 +529,7 @@ async def test_session_reset_flushes_window(
     mock_config_entry: MockConfigEntry,
     freezer: FrozenDateTimeFactory,
 ) -> None:
-    """Test a sharp usage drop restarts the burn-rate window instead of going negative."""
+    """Test a sharp usage drop restarts the burn-rate window, not going negative."""
     freezer.move_to("2026-06-25T12:00:00+00:00")
     aioclient_mock.get(USAGE_ENDPOINT, json=_session_payload(80))
     await setup_integration(hass, mock_config_entry)

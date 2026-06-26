@@ -4,7 +4,13 @@ from datetime import timedelta
 from typing import Any
 
 from aiohttp import ClientError
+from homeassistant.config_entries import SOURCE_USER
+from homeassistant.const import CONF_ACCESS_TOKEN, CONF_SCAN_INTERVAL
+from homeassistant.core import HomeAssistant
+from homeassistant.data_entry_flow import FlowResultType
 import pytest
+from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
 from custom_components.clawdmeter.const import (
     CONF_ACCOUNT_EMAIL,
@@ -14,16 +20,9 @@ from custom_components.clawdmeter.const import (
     DOMAIN,
     OAUTH_TOKEN_URL,
 )
-from homeassistant.config_entries import SOURCE_USER
-from homeassistant.const import CONF_ACCESS_TOKEN, CONF_SCAN_INTERVAL
-from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResultType
 
 from . import setup_integration
 from .conftest import ACCOUNT_EMAIL, VALID_CODE, register_oauth_success
-
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
 pytestmark = pytest.mark.usefixtures("mock_pkce")
 
