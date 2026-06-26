@@ -102,7 +102,7 @@ Tune how often it polls under the integration's **Configure** button (60–3600 
 
 ## 🃏 Animated Lovelace card
 
-Clawdmeter ships a custom card that draws the **real pixel-art creature** (the original
+There is a companion animated card that draws the **real pixel-art creature** (the original
 [Clawdmeter](https://github.com/HermannBjorgvin/Clawdmeter) / [claudepix](https://claudepix.vercel.app)
 animations) right on your dashboard. The creature's mood follows your burn rate
 (idle → heavy) and its frame glows green/orange/red with the runway pace — exactly like
@@ -112,38 +112,12 @@ the ESPHome display.
   <img src="images/card_preview.png" alt="Clawdmeter Lovelace card" width="680">
 </p>
 
-**Install the card**
+The card now lives in its own repository:
+**[corgan2222/lovelace-clawdmeter](https://github.com/corgan2222/lovelace-clawdmeter)**.
 
-1. Copy `lovelace/clawdmeter-card.js` into your `config/www/` folder.
-2. **Settings → Dashboards → ⋮ → Resources → Add resource** → URL `/local/clawdmeter-card.js`,
-   type **JavaScript Module**.
-3. Add **Clawdmeter Card** from the card picker, or paste the YAML below.
-
-**Panel layout**
-
-```yaml
-type: custom:clawdmeter-card
-session_usage: sensor.claude_stefan_max_session_usage
-session_reset: sensor.claude_stefan_max_session_reset
-week_usage: sensor.claude_stefan_max_weekly_usage
-animation_group: sensor.claude_stefan_max_animation_group
-pace_frame: sensor.claude_stefan_max_pace_frame
-runway_margin: sensor.claude_stefan_max_runway_margin
-```
-
-**Hero layout** — the banner look, as a live card:
-
-```yaml
-type: custom:clawdmeter-card
-layout: hero
-session_usage: sensor.claude_stefan_max_session_usage
-session_reset: sensor.claude_stefan_max_session_reset
-animation_group: sensor.claude_stefan_max_animation_group
-pace_frame: sensor.claude_stefan_max_pace_frame
-```
-
-Only `animation_group` is needed for the creature to move; every other entity is optional
-and simply fills in more of the card.
+> ⚠️ The card is **still work in progress and untested** — not yet ready to install.
+> Installation and configuration (HACS plugin, `type: custom:clawdmeter-card`) will be
+> documented in that repository once it is ready.
 
 ## 🐾 ESPHome companion
 
