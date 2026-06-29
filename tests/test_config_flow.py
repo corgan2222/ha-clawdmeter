@@ -222,6 +222,52 @@ async def test_reconfigure_flow(
     assert mock_config_entry.data[CONF_ACCESS_TOKEN] == "access-token"
 
 
+@pytest.mark.parametrize("start_flow", ["start_reauth_flow", "start_reconfigure_flow"])
+@pytest.mark.usefixtures("mock_oauth")
+async def test_reauth_reconfigure_to_existing_account_aborts(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    start_flow: str,
+) -> None:
+    """Test re-pointing an entry at an already-configured account aborts."""
+    # mock_config_entry already tracks ACCOUNT_EMAIL; a second entry for another
+    # account is then re-authorized as that same account.
+    mock_config_entry.add_to_hass(hass)
+    other = MockConfigEntry(
+        domain=DOMAIN, unique_id="old@example.com", data={CONF_ACCESS_TOKEN: "old"}
+    )
+    other.add_to_hass(hass)
+
+    result = await getattr(other, start_flow)(hass)
+    result = await _submit_code(hass, result["flow_id"], VALID_CODE)
+    await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    # The other entry's identity is left untouched.
+    assert other.unique_id == "old@example.com"
+
+
+@pytest.mark.usefixtures("mock_oauth", "mock_setup_entry")
+async def test_reconfigure_switching_account_updates_unique_id(
+    hass: HomeAssistant,
+) -> None:
+    """Test reconfiguring onto a different account re-keys the entry's unique id."""
+    entry = MockConfigEntry(
+        domain=DOMAIN, unique_id="old@example.com", data={CONF_ACCESS_TOKEN: "old"}
+    )
+    entry.add_to_hass(hass)
+
+    result = await entry.start_reconfigure_flow(hass)
+    result = await _submit_code(hass, result["flow_id"], VALID_CODE)
+    await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reconfigure_successful"
+    assert entry.unique_id == ACCOUNT_EMAIL
+    assert entry.data[CONF_ACCESS_TOKEN] == "access-token"
+
+
 @pytest.mark.usefixtures("mock_usage")
 async def test_options_flow_sets_interval(
     hass: HomeAssistant, mock_config_entry: MockConfigEntry
