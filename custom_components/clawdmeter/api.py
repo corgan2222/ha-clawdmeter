@@ -167,12 +167,15 @@ class ClawdmeterClient:
     async def _async_token_request(
         self, payload: dict[str, str], *, fallback_refresh: str = ""
     ) -> TokenBundle:
-        """Post to the token endpoint and parse the bundle."""
+        """Post to the token endpoint and parse the bundle.
+
+        The Anthropic OAuth token endpoint expects a JSON body; a form-encoded
+        body is rejected with HTTP 400 (notably on token refresh).
+        """
         response = await self._request_with_retry(
             lambda: self._session.post(
                 OAUTH_TOKEN_URL,
-                data=payload,
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                json=payload,
                 timeout=ClientTimeout(total=REQUEST_TIMEOUT),
             )
         )
