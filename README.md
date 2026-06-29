@@ -13,6 +13,11 @@
   <img alt="License" src="https://img.shields.io/badge/license-MIT-green.svg">
 </p>
 
+<p align="center">
+  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=corgan2222&repository=ha-clawdmeter&category=integration"><img alt="Add repository to HACS" src="https://my.home-assistant.io/badges/hacs_repository.svg"></a>
+  <a href="https://my.home-assistant.io/redirect/config_flow_start/?domain=clawdmeter"><img alt="Add integration to Home Assistant" src="https://my.home-assistant.io/badges/config_flow_start.svg"></a>
+</p>
+
 Clawdmeter polls Anthropic's usage API and turns it into a full set of Home Assistant
 sensors — session and weekly limits, reset countdowns, and a layer of **computed
 metrics the API doesn't give you**: live burn rate, time-to-limit, a "runway" verdict
@@ -21,15 +26,16 @@ display, but great on its own dashboard too.
 
 ## ✨ Highlights
 
-- **Session, weekly & Sonnet usage** with reset timestamps and a live "resets in" countdown.
+- **Session, weekly, Sonnet & Opus usage** with reset timestamps and a live "resets in" countdown.
 - **Burn rate (5 min & 30 min)** in %/h — see how fast you are spending right now.
 - **Time to limit** — minutes until you hit 100% at the current pace.
 - **Runway** — does the session reset before you run out? You get a pace ratio, a signed
   margin and a "limit reached before reset" alert.
 - **Pace frame & animation mood** — green/orange/red plus idle→heavy buckets, ready to
   drive a dashboard accent or an ESPHome creature.
-- **Extra usage / overage** — credits, limit and percentage (legacy *and* new spend API).
+- **Extra usage / overage** — credits, limit, percentage and a status (normal/warning/critical), from the legacy *and* new spend API.
 - **Multi-account** — run a Pro and a Max account side by side; each gets its own device.
+- **Resilient** — rides out brief API outages by holding the last values for a grace window instead of flipping everything to "unavailable".
 - **English & German** UI out of the box, plus a configurable poll interval.
 
 <p align="center">
@@ -60,7 +66,7 @@ readings sit under **Diagnostic**.
 | Account | Account · Plan |
 | Usage | Session usage · Weekly usage · Weekly Sonnet usage · Weekly Opus usage |
 | Resets | Session reset · Weekly reset · Weekly Sonnet reset · Weekly Opus reset |
-| Overage | Extra usage · Extra usage credits · Extra usage limit · Extra usage enabled |
+| Overage | Extra usage · Extra usage status · Extra usage credits · Extra usage limit · Extra usage enabled |
 
 ## 💤 States when Claude is idle
 
@@ -81,9 +87,8 @@ keep history graphs continuous and meaningful:
 
 **HACS (recommended)**
 
-1. HACS → ⋮ → **Custom repositories** → add this repository, category **Integration**.
-2. Install **Clawdmeter**, then restart Home Assistant.
-3. **Settings → Devices & Services → Add Integration → Clawdmeter**.
+1. **[Add this repository to HACS](https://my.home-assistant.io/redirect/hacs_repository/?owner=corgan2222&repository=ha-clawdmeter&category=integration)** (or in HACS: ⋮ → **Custom repositories** → add it, category **Integration**), then install **Clawdmeter** and restart Home Assistant.
+2. **[Add the Clawdmeter integration](https://my.home-assistant.io/redirect/config_flow_start/?domain=clawdmeter)** (or **Settings → Devices & Services → Add Integration → Clawdmeter**).
 
 **Manual** — copy `custom_components/clawdmeter` into your `config/custom_components/`
 and restart.
@@ -142,8 +147,8 @@ extra configuration needed.
 ## 🔔 Usage alerts
 
 The integration ships an automation blueprint
-(`blueprints/automation/usage_alert.yaml`) that fires an action when a chosen usage
-sensor rises above a threshold.
+(`custom_components/clawdmeter/blueprints/automation/usage_alert.yaml`) that fires an
+action when a chosen usage sensor rises above a threshold.
 
 1. Copy it to `config/blueprints/automation/clawdmeter/usage_alert.yaml` (or import it
    from its raw URL via **Settings → Automations & scenes → Blueprints → Import**).
