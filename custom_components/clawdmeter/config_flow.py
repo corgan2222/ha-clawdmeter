@@ -149,7 +149,20 @@ class ClawdmeterConfigFlow(ConfigFlow, domain=DOMAIN):
             if step_id == STEP_RECONFIGURE
             else self._get_reauth_entry()
         )
-        return self.async_update_reload_and_abort(entry, data_updates=data)
+        # Reauth and reconfigure can re-point an entry at a different account, so
+        # refuse to let two entries track the same one and keep the entry's
+        # unique id in sync with the account it now authenticates.
+        new_unique_id = account.email or account.name
+        if new_unique_id and any(
+            other.entry_id != entry.entry_id and other.unique_id == new_unique_id
+            for other in self._async_current_entries()
+        ):
+            return self.async_abort(reason="already_configured")
+        return self.async_update_reload_and_abort(
+            entry,
+            unique_id=new_unique_id or entry.unique_id,
+            data_updates=data,
+        )
 
     @staticmethod
     @callback
