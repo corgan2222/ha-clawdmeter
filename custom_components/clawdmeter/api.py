@@ -1,6 +1,8 @@
 """Thin async client for the Claude OAuth usage API."""
 
+import asyncio
 import base64
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 import hashlib
 import secrets
@@ -8,10 +10,12 @@ import time
 from typing import Any
 from urllib.parse import urlencode
 
-from aiohttp import ClientError, ClientSession, ClientTimeout
+from aiohttp import ClientError, ClientResponse, ClientSession, ClientTimeout
 
 from .const import (
     BETA_HEADER,
+    CONNECT_RETRY_DELAYS,
+    LOGGER,
     OAUTH_AUTHORIZE_URL,
     OAUTH_CLIENT_ID,
     OAUTH_REDIRECT_URI,
@@ -107,6 +111,31 @@ class ClawdmeterClient:
         """Store the shared aiohttp session."""
         self._session = session
 
+    async def _request_with_retry(
+        self, send: Callable[[], Awaitable[ClientResponse]]
+    ) -> ClientResponse:
+        """Send a request, retrying only genuine connection failures.
+
+        A failed connection never reaches the server, so retrying it cannot trip
+        the endpoint's aggressive rate limit. HTTP error statuses are inspected
+        by the caller and are never retried here.
+        """
+        for attempt, delay in enumerate(CONNECT_RETRY_DELAYS, start=1):
+            try:
+                return await send()
+            except ClientError as err:
+                LOGGER.debug(
+                    "Connection failed (attempt %s), retrying in %ss: %s",
+                    attempt,
+                    delay,
+                    err,
+                )
+                await asyncio.sleep(delay)
+        try:
+            return await send()
+        except ClientError as err:
+            raise ClawdmeterConnectionError(str(err)) from err
+
     async def async_exchange_code(
         self, code: str, challenge: OAuthChallenge, returned_state: str
     ) -> TokenBundle:
@@ -139,15 +168,17 @@ class ClawdmeterClient:
         self, payload: dict[str, str], *, fallback_refresh: str = ""
     ) -> TokenBundle:
         """Post to the token endpoint and parse the bundle."""
-        try:
-            response = await self._session.post(
+        response = await self._request_with_retry(
+            lambda: self._session.post(
                 OAUTH_TOKEN_URL,
                 data=payload,
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 timeout=ClientTimeout(total=REQUEST_TIMEOUT),
             )
-            if response.status >= 400:
-                raise ClawdmeterAuthError(f"Token endpoint returned {response.status}")
+        )
+        if response.status >= 400:
+            raise ClawdmeterAuthError(f"Token endpoint returned {response.status}")
+        try:
             body = await response.json()
         except ClientError as err:
             raise ClawdmeterConnectionError(str(err)) from err
@@ -179,8 +210,8 @@ class ClawdmeterClient:
 
     async def _async_get(self, url: str, access_token: str) -> dict[str, Any]:
         """Perform an authenticated GET and return parsed JSON."""
-        try:
-            response = await self._session.get(
+        response = await self._request_with_retry(
+            lambda: self._session.get(
                 url,
                 headers={
                     "Authorization": f"Bearer {access_token}",
@@ -188,10 +219,12 @@ class ClawdmeterClient:
                 },
                 timeout=ClientTimeout(total=REQUEST_TIMEOUT),
             )
-            if response.status == 401:
-                raise ClawdmeterAuthError("Access token rejected")
-            if response.status >= 400:
-                raise ClawdmeterConnectionError(f"{url} returned {response.status}")
+        )
+        if response.status == 401:
+            raise ClawdmeterAuthError("Access token rejected")
+        if response.status >= 400:
+            raise ClawdmeterConnectionError(f"{url} returned {response.status}")
+        try:
             return await response.json()
         except ClientError as err:
             raise ClawdmeterConnectionError(str(err)) from err

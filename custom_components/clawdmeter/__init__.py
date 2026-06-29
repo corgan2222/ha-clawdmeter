@@ -6,6 +6,7 @@ from homeassistant.const import CONF_SCAN_INTERVAL, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.storage import Store
+from homeassistant.loader import async_get_integration
 
 from .api import ClawdmeterClient
 from .const import DEFAULT_SCAN_INTERVAL, DOMAIN, STORAGE_VERSION
@@ -17,7 +18,10 @@ PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.SENSOR]
 async def async_setup_entry(hass: HomeAssistant, entry: ClawdmeterConfigEntry) -> bool:
     """Set up Clawdmeter from a config entry."""
     client = ClawdmeterClient(async_get_clientsession(hass))
-    coordinator = ClawdmeterDataUpdateCoordinator(hass, entry, client)
+    integration = await async_get_integration(hass, DOMAIN)
+    coordinator = ClawdmeterDataUpdateCoordinator(
+        hass, entry, client, str(integration.version)
+    )
     await coordinator.async_config_entry_first_refresh()
 
     entry.runtime_data = coordinator

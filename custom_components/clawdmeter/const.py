@@ -14,6 +14,12 @@ DEFAULT_SCAN_INTERVAL: Final = 300
 MIN_SCAN_INTERVAL: Final = 60
 MAX_SCAN_INTERVAL: Final = 3600
 
+# Re-serve the last known values through this many consecutive failed polls
+# before the entities go unavailable, so a brief API/network blip does not flip
+# everything to "unavailable". At the 300 s default interval this is roughly a
+# 30-minute grace window.
+MAX_FETCH_FAILURES: Final = 6
+
 # OAuth - the public PKCE client shared with the Claude CLI. No secret involved;
 # the user pastes the authorization code from the Anthropic callback page.
 OAUTH_CLIENT_ID: Final = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
@@ -28,6 +34,11 @@ PROFILE_ENDPOINT: Final = "https://api.anthropic.com/api/oauth/profile"
 BETA_HEADER: Final = "oauth-2025-04-20"
 
 REQUEST_TIMEOUT: Final = 15
+# Backoff (seconds) between immediate retries of a genuine connection failure.
+# A failed connection never reaches the server, so retrying it does not count
+# against the endpoint's aggressive rate limit; HTTP error statuses are never
+# retried. The tuple length is the number of extra attempts; () disables retry.
+CONNECT_RETRY_DELAYS: Final = (2.0, 5.0)
 # Refresh the access token this many seconds before it actually expires.
 TOKEN_EXPIRY_MARGIN: Final = 60
 

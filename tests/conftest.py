@@ -48,6 +48,13 @@ def _mock_storage(hass_storage: dict[str, Any]) -> None:
     """Back the coordinator's Store with in-memory storage in every test."""
 
 
+@pytest.fixture(autouse=True)
+def _instant_connect_retry() -> Generator[None]:
+    """Keep the connection-failure retry logic but drop its backoff sleeps."""
+    with patch("custom_components.clawdmeter.api.CONNECT_RETRY_DELAYS", (0.0, 0.0)):
+        yield
+
+
 @pytest.fixture
 def snapshot(snapshot: SnapshotAssertion) -> SnapshotAssertion:
     """Apply the Home Assistant snapshot extension (serializers + snapshots/ dir)."""

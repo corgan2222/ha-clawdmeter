@@ -3,10 +3,10 @@
   "name": "Clawdmeter",
   "codeowners": ["@corgan2222"],
   "config_flow": true,
-  "documentation": "https://github.com/corgan2222/clawdmeter",
+  "documentation": "https://github.com/corgan2222/ha-clawdmeter",
   "integration_type": "service",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/corgan2222/clawdmeter/issues",
+  "issue_tracker": "https://github.com/corgan2222/ha-clawdmeter/issues",
   "requirements": [],
-  "version": "0.0.1"
+  "version": "0.0.2"
 }
