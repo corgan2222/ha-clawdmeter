@@ -35,6 +35,7 @@ from .const import (
     GROUP_NORMAL,
     GROUP_NORMAL_RATE,
     LOGGER,
+    MAX_FETCH_FAILURES,
     PACE_GREEN_MAX,
     PACE_ORANGE_MAX,
     RATE_WARMUP,
@@ -104,6 +105,7 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
         hass: HomeAssistant,
         entry: ClawdmeterConfigEntry,
         client: ClawdmeterClient,
+        version: str,
     ) -> None:
         """Initialise the coordinator."""
         interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
@@ -115,6 +117,7 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
             config_entry=entry,
         )
         self._client = client
+        self.integration_version = version
         self._samples: deque[_Sample] = deque()
         # The last raw usage response, kept for diagnostics (no extra API call).
         self.raw_usage: dict[str, Any] | None = None
@@ -125,6 +128,7 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
             hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}"
         )
         self._logged_empty = False
+        self._fetch_failures = 0
 
     @override
     async def _async_setup(self) -> None:
@@ -151,20 +155,41 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
     @override
     async def _async_update_data(self) -> ClawdmeterData:
         """Refresh the token if needed, fetch usage and derive metrics."""
-        await self._async_ensure_token()
-        token = self.config_entry.data[CONF_ACCESS_TOKEN]
         try:
+            await self._async_ensure_token()
+            token = self.config_entry.data[CONF_ACCESS_TOKEN]
             raw = await self._client.async_get_usage(token)
         except ClawdmeterAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
         except ClawdmeterConnectionError as err:
-            raise UpdateFailed(str(err)) from err
+            return self._handle_fetch_failure(err)
+        self._fetch_failures = 0
         LOGGER.debug("Fetched usage payload: %s", raw)
         self.raw_usage = raw
         data = self._derive(raw)
         self._store.async_delay_save(self._persisted_state, STORE_SAVE_DELAY)
         self._log_data_health(raw, data)
         return data
+
+    def _handle_fetch_failure(self, err: ClawdmeterConnectionError) -> ClawdmeterData:
+        """Re-serve the last known values through a brief outage.
+
+        A handful of consecutive connection failures keep the previous data so a
+        short API/network blip does not flip every entity to "unavailable"; once
+        they persist past MAX_FETCH_FAILURES the error surfaces and entities go
+        unavailable as usual.
+        """
+        self._fetch_failures += 1
+        if self.data is not None and self._fetch_failures <= MAX_FETCH_FAILURES:
+            LOGGER.warning(
+                "Error fetching clawdmeter data (%s/%s), keeping the last known "
+                "values: %s",
+                self._fetch_failures,
+                MAX_FETCH_FAILURES,
+                err,
+            )
+            return self.data
+        raise UpdateFailed(str(err)) from err
 
     def _log_data_health(self, raw: dict[str, Any], data: ClawdmeterData) -> None:
         """Explain in the log when the API returns no usable usage windows."""
@@ -188,14 +213,9 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
         if time.time() < expires_at - TOKEN_EXPIRY_MARGIN:
             return
         LOGGER.debug("Access token expired, refreshing")
-        try:
-            bundle = await self._client.async_refresh(
-                self.config_entry.data.get(CONF_REFRESH_TOKEN, "")
-            )
-        except ClawdmeterAuthError as err:
-            raise ConfigEntryAuthFailed(str(err)) from err
-        except ClawdmeterConnectionError as err:
-            raise UpdateFailed(str(err)) from err
+        bundle = await self._client.async_refresh(
+            self.config_entry.data.get(CONF_REFRESH_TOKEN, "")
+        )
         self.hass.config_entries.async_update_entry(
             self.config_entry,
             data={

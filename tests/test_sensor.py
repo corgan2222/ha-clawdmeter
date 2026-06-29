@@ -5,13 +5,17 @@ from unittest.mock import patch
 from freezegun.api import FrozenDateTimeFactory
 from homeassistant.const import EntityCategory, Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from homeassistant.loader import async_get_integration
 import pytest
 from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     snapshot_platform,
 )
 from syrupy.assertion import SnapshotAssertion
+
+from custom_components.clawdmeter.const import DOMAIN
 
 from . import setup_integration
 
@@ -69,3 +73,20 @@ async def test_account_entities_and_categories(
     # Computed projections are primary sensors (no category).
     assert entity_registry.async_get(COMPUTED).entity_category is None
     assert entity_registry.async_get(USAGE_RATE).entity_category is None
+
+
+@pytest.mark.usefixtures("mock_usage")
+async def test_device_reports_integration_version(
+    hass: HomeAssistant,
+    device_registry: dr.DeviceRegistry,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """Test the account device exposes the integration version as sw_version."""
+    await setup_integration(hass, mock_config_entry)
+
+    integration = await async_get_integration(hass, DOMAIN)
+    device = device_registry.async_get_device(
+        identifiers={(DOMAIN, mock_config_entry.entry_id)}
+    )
+    assert device is not None
+    assert device.sw_version == str(integration.version)

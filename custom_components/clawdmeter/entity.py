@@ -43,4 +43,5 @@ class ClawdmeterEntity(CoordinatorEntity[ClawdmeterDataUpdateCoordinator]):
             name=account_title(
                 entry.data.get(CONF_ACCOUNT_NAME), entry.data.get(CONF_PLAN)
             ),
+            sw_version=coordinator.integration_version,
         )

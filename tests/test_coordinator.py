@@ -4,14 +4,19 @@ from datetime import UTC, datetime, timedelta
 import logging
 from typing import Any
 
+from aiohttp import ClientError
 from freezegun.api import FrozenDateTimeFactory
-from homeassistant.const import EVENT_HOMEASSISTANT_FINAL_WRITE, STATE_UNKNOWN
+from homeassistant.const import (
+    EVENT_HOMEASSISTANT_FINAL_WRITE,
+    STATE_UNAVAILABLE,
+    STATE_UNKNOWN,
+)
 from homeassistant.core import HomeAssistant
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
-from custom_components.clawdmeter.const import USAGE_ENDPOINT
+from custom_components.clawdmeter.const import MAX_FETCH_FAILURES, USAGE_ENDPOINT
 
 from . import setup_integration
 
@@ -47,6 +52,19 @@ async def _push_usage(
     """Replace the usage payload and trigger a coordinator refresh."""
     aioclient_mock.clear_requests()
     aioclient_mock.get(USAGE_ENDPOINT, json=_session_payload(utilization, resets_at))
+    await entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+
+
+async def _push_error(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    entry: MockConfigEntry,
+    **usage_kwargs: object,
+) -> None:
+    """Make the next usage poll fail and trigger a coordinator refresh."""
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(USAGE_ENDPOINT, **usage_kwargs)
     await entry.runtime_data.async_refresh()
     await hass.async_block_till_done()
 
@@ -578,3 +596,45 @@ async def test_reset_drop_threshold_boundary(
     assert float(hass.states.get(BURN_30M).state) == pytest.approx(
         burn30_after_recovery, abs=2.0
     )
+
+
+@pytest.mark.parametrize(
+    "error_kwargs",
+    [{"exc": ClientError()}, {"status": 500}],
+    ids=["connection-error", "server-error"],
+)
+async def test_transient_error_keeps_last_values(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+    freezer: FrozenDateTimeFactory,
+    caplog: pytest.LogCaptureFixture,
+    error_kwargs: dict[str, object],
+) -> None:
+    """Test brief API outages keep the last values before going unavailable."""
+    freezer.move_to("2026-06-25T12:00:00+00:00")
+    aioclient_mock.get(USAGE_ENDPOINT, json=_session_payload(20))
+    await setup_integration(hass, mock_config_entry)
+    assert float(hass.states.get(SESSION_USAGE).state) == 20.0
+
+    # Every failure up to the tolerance re-serves the last value and stays
+    # available.
+    caplog.set_level(logging.WARNING)
+    for _ in range(MAX_FETCH_FAILURES):
+        freezer.tick(timedelta(minutes=5))
+        await _push_error(hass, aioclient_mock, mock_config_entry, **error_kwargs)
+        assert float(hass.states.get(SESSION_USAGE).state) == 20.0
+        assert mock_config_entry.runtime_data.last_update_success is True
+    assert "keeping the last known values" in caplog.text
+
+    # One more straight failure exceeds the tolerance, so entities go stale.
+    freezer.tick(timedelta(minutes=5))
+    await _push_error(hass, aioclient_mock, mock_config_entry, **error_kwargs)
+    assert hass.states.get(SESSION_USAGE).state == STATE_UNAVAILABLE
+    assert mock_config_entry.runtime_data.last_update_success is False
+
+    # A good poll recovers at once and resets the tolerance counter.
+    freezer.tick(timedelta(minutes=5))
+    await _push_usage(hass, aioclient_mock, mock_config_entry, 25)
+    assert float(hass.states.get(SESSION_USAGE).state) == 25.0
+    assert mock_config_entry.runtime_data.last_update_success is True
