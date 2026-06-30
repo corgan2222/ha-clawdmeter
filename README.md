@@ -44,10 +44,6 @@ display, but great on its own dashboard too.
 - **Resilient** — rides out brief API outages by holding the last values for a grace window instead of flipping everything to "unavailable".
 - **English & German** UI out of the box, plus a configurable poll interval.
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/corgan2222/ha-clawdmeter/main/images/dashboard.png" alt="Clawdmeter dashboard" width="900">
-</p>
-
 ## 🃏 Animated Lovelace card
 
 A companion animated card draws the **real pixel-art creature** (the original
