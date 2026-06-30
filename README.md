@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/corgan2222/ha-clawdmeter/refs/heads/main/images/hero.png" alt="Clawdmeter" width="840">
+  <img src="https://raw.githubusercontent.com/corgan2222/ha-clawdmeter/main/images/hero.png" alt="Clawdmeter" width="840">
 </p>
 
 <h1 align="center">Clawdmeter — Claude Usage for Home Assistant</h1>
