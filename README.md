@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/hero.png" alt="Clawdmeter" width="840">
+  <img src="https://raw.githubusercontent.com/corgan2222/ha-clawdmeter/main/images/hero.png" alt="Clawdmeter" width="840">
 </p>
 
 <h1 align="center">Clawdmeter — Claude Usage for Home Assistant</h1>
@@ -16,6 +16,12 @@
 <p align="center">
   <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=corgan2222&repository=ha-clawdmeter&category=integration"><img alt="Add repository to HACS" src="https://my.home-assistant.io/badges/hacs_repository.svg"></a>
   <a href="https://my.home-assistant.io/redirect/config_flow_start/?domain=clawdmeter"><img alt="Add integration to Home Assistant" src="https://my.home-assistant.io/badges/config_flow_start.svg"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/corgan2222/esphome-modular-lvgl-buttons"><img src="https://raw.githubusercontent.com/corgan2222/ha-clawdmeter/main/images/clawdmeter-esp-display.png" alt="Clawdmeter ESPHome display" height="40"></a>
+  <a href="https://github.com/corgan2222/ha-clawdmeter"><img src="https://raw.githubusercontent.com/corgan2222/ha-clawdmeter/main/images/clawdmeter-ha-integration.png" alt="Clawdmeter Home Assistant integration" height="40"></a>
+  <a href="https://github.com/corgan2222/lovelace-clawdmeter"><img src="https://raw.githubusercontent.com/corgan2222/ha-clawdmeter/main/images/clawdmeter-lovelace-card.png" alt="Clawdmeter Lovelace card" height="40"></a>
 </p>
 
 Clawdmeter polls Anthropic's usage API and turns it into a full set of Home Assistant
@@ -39,7 +45,35 @@ display, but great on its own dashboard too.
 - **English & German** UI out of the box, plus a configurable poll interval.
 
 <p align="center">
-  <img src="images/dashboard.png" alt="Clawdmeter dashboard" width="900">
+  <img src="https://raw.githubusercontent.com/corgan2222/ha-clawdmeter/main/images/dashboard.png" alt="Clawdmeter dashboard" width="900">
+</p>
+
+## 🃏 Animated Lovelace card
+
+A companion animated card draws the **real pixel-art creature** (the original
+[Clawdmeter](https://github.com/HermannBjorgvin/Clawdmeter) / [claudepix](https://claudepix.vercel.app)
+animations) right on your dashboard. The creature's mood follows your burn rate
+(idle → heavy) and its frame glows green/orange/red with the runway pace — exactly like
+the ESPHome display.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/corgan2222/lovelace-clawdmeter/main/images/card_preview.png" alt="Clawdmeter Lovelace card" width="680">
+</p>
+
+It lives in its own repository — **[corgan2222/lovelace-clawdmeter](https://github.com/corgan2222/lovelace-clawdmeter)** (HACS plugin, `type: custom:clawdmeter-card`).
+
+## 🐾 ESPHome companion
+
+These sensors are built to feed the animated **Clawdmeter** pixel-art display in
+[esphome-modular-lvgl-buttons](https://github.com/corgan2222/esphome-modular-lvgl-buttons) — a
+small ESP32 + LVGL screen that shows your Claude usage at a glance. The creature's mood
+(idle → heavy) follows your burn rate, the breathing frame glows green/orange/red with the
+runway pace, and the panel surfaces the usage and projection numbers — all driven straight
+from the metrics above. Point the device's templates at your `clawdmeter` entities and it
+stays in sync on every poll.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/corgan2222/esphome-modular-lvgl-buttons/main/example_code/clawdmeter/sdl_tests/screenshots/modern-data.png" alt="Clawdmeter ESPHome display" width="680">
 </p>
 
 ## 📊 Entities
@@ -85,6 +119,11 @@ keep history graphs continuous and meaningful:
 
 ## 🚀 Installation
 
+<p align="center">
+  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=corgan2222&repository=ha-clawdmeter&category=integration"><img alt="Add repository to HACS" src="https://my.home-assistant.io/badges/hacs_repository.svg"></a>
+  <a href="https://my.home-assistant.io/redirect/config_flow_start/?domain=clawdmeter"><img alt="Add integration to Home Assistant" src="https://my.home-assistant.io/badges/config_flow_start.svg"></a>
+</p>
+
 **HACS (recommended)**
 
 1. **[Add this repository to HACS](https://my.home-assistant.io/redirect/hacs_repository/?owner=corgan2222&repository=ha-clawdmeter&category=integration)** (or in HACS: ⋮ → **Custom repositories** → add it, category **Integration**), then install **Clawdmeter** and restart Home Assistant.
@@ -104,31 +143,6 @@ Clawdmeter authenticates with Anthropic over OAuth — there is no API key to ma
 
 Tune how often it polls under the integration's **Configure** button (60–3600 s, default
 300). The usage API is rate limited, so keep it sensible.
-
-## 🃏 Animated Lovelace card
-
-There is a companion animated card that draws the **real pixel-art creature** (the original
-[Clawdmeter](https://github.com/HermannBjorgvin/Clawdmeter) / [claudepix](https://claudepix.vercel.app)
-animations) right on your dashboard. The creature's mood follows your burn rate
-(idle → heavy) and its frame glows green/orange/red with the runway pace — exactly like
-the ESPHome display.
-
-<p align="center">
-  <img src="images/card_preview.png" alt="Clawdmeter Lovelace card" width="680">
-</p>
-
-The card now lives in its own repository:
-**[corgan2222/lovelace-clawdmeter](https://github.com/corgan2222/lovelace-clawdmeter)**.
-
-> ⚠️ The card is **still work in progress and untested** — not yet ready to install.
-> Installation and configuration (HACS plugin, `type: custom:clawdmeter-card`) will be
-> documented in that repository once it is ready.
-
-## 🐾 ESPHome companion
-
-These sensors are designed to feed the animated **Clawdmeter** pixel-art display in
-[esphome-modular-lvgl-buttons](https://github.com/corgan2222/esphome-modular-lvgl-buttons):
-the creature's mood and the breathing pace frame come straight from the metrics above.
 
 ## 🔍 Diagnostics
 
