@@ -85,8 +85,8 @@ async def test_device_reports_integration_version(
     await setup_integration(hass, mock_config_entry)
 
     integration = await async_get_integration(hass, DOMAIN)
-    device = device_registry.async_get_device(
-        identifiers={(DOMAIN, mock_config_entry.entry_id)}
+    device = device_registry.async_get_device_by_identifier(
+        (DOMAIN, mock_config_entry.entry_id), mock_config_entry.entry_id
     )
     assert device is not None
     assert device.sw_version == str(integration.version)

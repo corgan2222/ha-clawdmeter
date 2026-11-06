@@ -54,6 +54,31 @@ CONF_ACCOUNT_EMAIL: Final = "account_email"
 CONF_PLAN: Final = "plan"
 CONF_AUTH_CODE: Final = "auth_code"
 
+# Option: on a plan without a five-hour window, let the session entities follow
+# the weekly window instead of staying empty. See WINDOW_* below.
+CONF_SESSION_FALLBACK: Final = "session_fallback"
+DEFAULT_SESSION_FALLBACK: Final = True
+
+# Which window the session entities are actually reporting, exposed as the
+# `window` attribute so a dashboard can tell the two apart.
+ATTR_WINDOW: Final = "window"
+WINDOW_SESSION: Final = "session"
+WINDOW_WEEKLY: Final = "weekly"
+
+# Attributes on the per-model weekly sensor.
+ATTR_MODEL: Final = "model"
+ATTR_RESETS_AT: Final = "resets_at"
+ATTR_ALLOWANCE: Final = "allowance_percent_of_weekly"
+ATTR_MODELS: Final = "models"
+
+# Plan names the profile endpoint reports as an organization type.
+ORGANIZATION_PLANS: Final = {
+    "claude_max": "Max",
+    "claude_pro": "Pro",
+    "claude_team": "Team",
+    "claude_enterprise": "Enterprise",
+}
+
 # --- Derived burn-rate / projection tuning ---------------------------------
 # A downward step in session usage larger than this many points is treated as a
 # session reset: the rolling sample window is flushed so the slope never spans

@@ -22,7 +22,9 @@ from .const import (
     CONF_EXPIRES_AT,
     CONF_PLAN,
     CONF_REFRESH_TOKEN,
+    CONF_SESSION_FALLBACK,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_SESSION_FALLBACK,
     DOMAIN,
     FRAME_GREEN,
     FRAME_ORANGE,
@@ -44,6 +46,18 @@ from .const import (
     STORAGE_VERSION,
     STORE_SAVE_DELAY,
     TOKEN_EXPIRY_MARGIN,
+    WINDOW_SESSION,
+    WINDOW_WEEKLY,
+)
+from .limits import (
+    KIND_SESSION,
+    KIND_WEEKLY_ALL,
+    LimitRow,
+    allowances,
+    of_kind,
+    parse_limits,
+    scoped,
+    scoped_for,
 )
 
 type ClawdmeterConfigEntry = ConfigEntry[ClawdmeterDataUpdateCoordinator]
@@ -61,6 +75,10 @@ class ClawdmeterData:
     session_reset: datetime | None
     session_reset_in: float | None
     session_peak_today: float | None
+    # Which window the four session fields above actually describe: "session"
+    # normally, "weekly" when the plan has no five-hour window and the fallback
+    # is on, None while nothing is known yet.
+    session_window: str | None
     week_usage: float | None
     week_pace: float | None
     week_reset: datetime | None
@@ -68,6 +86,13 @@ class ClawdmeterData:
     sonnet_reset: datetime | None
     opus_usage: float | None
     opus_reset: datetime | None
+    # The per-model weekly cap the server currently applies, whatever model it
+    # is for. model_usages maps every capped model's label to its percentage.
+    model_name: str | None
+    model_usage: float | None
+    model_reset: datetime | None
+    model_allowance: float | None
+    model_usages: dict[str, float]
     extra_enabled: bool | None
     extra_usage: float | None
     extra_credits: float | None
@@ -129,6 +154,11 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
         )
         self._logged_empty = False
         self._fetch_failures = 0
+        # Sticky: an account that has ever reported a five-hour window has one.
+        # The API omits that window between resets, so a single poll without it
+        # must not be read as "this plan has no session limit".
+        self._session_seen = False
+        self._logged_fallback = False
 
     @override
     async def _async_setup(self) -> None:
@@ -142,6 +172,7 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
         self._peak_value = stored.get("peak_value")
         peak_date = stored.get("peak_date")
         self._peak_date = date.fromisoformat(peak_date) if peak_date else None
+        self._session_seen = bool(stored.get("session_seen", False))
 
     @callback
     def _persisted_state(self) -> dict[str, Any]:
@@ -150,6 +181,7 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
             "samples": [{"ts": s.ts, "pct": s.pct} for s in self._samples],
             "peak_value": self._peak_value,
             "peak_date": self._peak_date.isoformat() if self._peak_date else None,
+            "session_seen": self._session_seen,
         }
 
     @override
@@ -230,14 +262,47 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
         """Combine the raw payload with the rolling burn-rate window."""
         now = dt_util.utcnow()
 
-        session_usage = _utilization(raw.get("five_hour"))
-        session_reset = _reset_at(raw.get("five_hour"))
-        week_usage = _utilization(raw.get("seven_day"))
-        week_reset = _reset_at(raw.get("seven_day"))
-        sonnet_usage = _utilization(raw.get("seven_day_sonnet"))
-        sonnet_reset = _reset_at(raw.get("seven_day_sonnet"))
-        opus_usage = _utilization(raw.get("seven_day_opus"))
-        opus_reset = _reset_at(raw.get("seven_day_opus"))
+        rows = parse_limits(raw.get("limits"))
+        shares = allowances(raw.get("weekly_scoped_shares"), rows)
+
+        session_usage, session_reset = _window(
+            raw.get("five_hour"), of_kind(rows, KIND_SESSION)
+        )
+        week_usage, week_reset = _window(
+            raw.get("seven_day"), of_kind(rows, KIND_WEEKLY_ALL)
+        )
+        sonnet_usage, sonnet_reset = _window(
+            raw.get("seven_day_sonnet"), scoped_for(rows, "sonnet")
+        )
+        opus_usage, opus_reset = _window(
+            raw.get("seven_day_opus"), scoped_for(rows, "opus")
+        )
+
+        if session_usage is not None or session_reset is not None:
+            self._session_seen = True
+        session_window = WINDOW_SESSION if self._session_seen else None
+        if not self._session_seen and self.config_entry.options.get(
+            CONF_SESSION_FALLBACK, DEFAULT_SESSION_FALLBACK
+        ):
+            # Some plans have no five-hour window at all, so the week is the
+            # only horizon the account has. Running it through the session
+            # fields keeps the burn rate, the projections and anything reading
+            # them alive, instead of leaving a third of the entities empty for
+            # a reason that is not a fault. The `window` attribute says which
+            # of the two a consumer is actually looking at.
+            session_usage = week_usage
+            session_reset = week_reset
+            session_window = WINDOW_WEEKLY
+            if not self._logged_fallback:
+                LOGGER.info(
+                    "This account reports no five-hour window, so the session "
+                    "entities follow the weekly one instead; their `window` "
+                    "attribute says which. Turn the session fallback off in the "
+                    "integration options to leave them empty"
+                )
+                self._logged_fallback = True
+
+        model_row = _busiest(scoped(rows))
         overage = _overage(raw)
 
         self._record_sample(now.timestamp(), session_usage)
@@ -261,6 +326,7 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
             session_reset=session_reset,
             session_reset_in=session_reset_in,
             session_peak_today=self._track_peak(now, session_usage),
+            session_window=session_window,
             week_usage=week_usage,
             week_pace=_week_pace(week_usage, week_reset, now),
             week_reset=week_reset,
@@ -268,6 +334,15 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
             sonnet_reset=sonnet_reset,
             opus_usage=opus_usage,
             opus_reset=opus_reset,
+            model_name=model_row.label if model_row else None,
+            model_usage=model_row.percent if model_row else None,
+            model_reset=model_row.resets_at if model_row else None,
+            model_allowance=shares.get(model_row.index) if model_row else None,
+            model_usages={
+                row.label: row.percent
+                for row in scoped(rows)
+                if row.label is not None and row.percent is not None
+            },
             extra_enabled=overage.enabled,
             extra_usage=overage.usage,
             extra_credits=overage.credits,
@@ -378,6 +453,40 @@ def _reset_at(section: dict[str, Any] | None) -> datetime | None:
     return parsed
 
 
+def _window(
+    legacy: dict[str, Any] | None, row: LimitRow | None
+) -> tuple[float | None, datetime | None]:
+    """Resolve one usage window from the legacy key or its ``limits`` row.
+
+    The legacy top-level objects win where they are still populated, so nothing
+    changes for accounts that get them; the row fills in where the server has
+    stopped sending them. Each half is resolved on its own because the two
+    sources have been seen disagreeing on which fields they carry.
+    """
+    usage = _utilization(legacy)
+    reset = _reset_at(legacy)
+    if row is not None:
+        if usage is None:
+            usage = row.percent
+        if reset is None:
+            reset = row.resets_at
+    return usage, reset
+
+
+def _busiest(rows: list[LimitRow]) -> LimitRow | None:
+    """Return the scoped row closest to its cap.
+
+    ``is_active`` would look like the right field for this, but it marks the row
+    the server wants shown as a single headline value, is not guaranteed to be
+    set on exactly one row, and has been observed missing. Picking the highest
+    percentage is something this side can always compute.
+    """
+    rated = [row for row in rows if row.percent is not None]
+    if not rated:
+        return None
+    return max(rated, key=lambda row: row.percent or 0.0)
+
+
 @dataclass(frozen=True, slots=True)
 class _Overage:
     """Parsed overage / extra-usage figures."""
@@ -410,7 +519,17 @@ def _overage(raw: dict[str, Any]) -> _Overage:
     extra = raw.get("extra_usage")
     spend = raw.get("spend")
     severity = spend.get("severity") if spend else None
-    if extra and extra.get("is_enabled"):
+    # Whether the feature is switched on and what it currently costs are two
+    # different questions. The API keeps reporting the spend and the cap while
+    # it is off (a zero balance disables it server-side even with the toggle
+    # on), and the web UI shows those figures, so they are reported here too
+    # and the enabled flag answers the first question on its own.
+    enabled: bool | None = None
+    if extra is not None:
+        enabled = bool(extra.get("is_enabled"))
+    elif spend is not None:
+        enabled = bool(spend.get("enabled"))
+    if extra:
         divisor = 10 ** extra.get("decimal_places", 2)
         used = _as_float(extra.get("used_credits"))
         limit = _as_float(extra.get("monthly_limit"))
@@ -418,27 +537,25 @@ def _overage(raw: dict[str, Any]) -> _Overage:
         if currency is None and spend:
             currency = _money(spend.get("used"))[1]
         return _Overage(
-            True,
+            enabled,
             _as_float(extra.get("utilization")),
             used / divisor if used is not None else None,
             limit / divisor if limit is not None else None,
             currency,
             severity,
         )
-    if spend and spend.get("enabled"):
+    if spend:
         used_amount, used_currency = _money(spend.get("used"))
         limit_amount, limit_currency = _money(spend.get("limit"))
         return _Overage(
-            True,
+            enabled,
             _as_float(spend.get("percent")),
             used_amount,
             limit_amount,
             used_currency or limit_currency,
             severity,
         )
-    if extra is not None or spend is not None:
-        return _Overage(False, None, None, None, None, severity)
-    return _Overage(None, None, None, None, None, None)
+    return _Overage(enabled, None, None, None, None, severity)
 
 
 def _week_pace(
