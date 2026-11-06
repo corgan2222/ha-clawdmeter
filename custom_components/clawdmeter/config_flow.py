@@ -103,6 +103,9 @@ class ClawdmeterConfigFlow(ConfigFlow, domain=DOMAIN):
                     errors["base"] = "exchange_failed"
                 except ClawdmeterConnectionError:
                     errors["base"] = "cannot_connect"
+                except Exception:
+                    LOGGER.exception("Unexpected error while authorizing")
+                    errors["base"] = "unknown"
                 else:
                     return await self._async_finish(step_id, bundle, account)
 
@@ -151,14 +154,19 @@ class ClawdmeterConfigFlow(ConfigFlow, domain=DOMAIN):
             if step_id == STEP_RECONFIGURE
             else self._get_reauth_entry()
         )
-        # Reauth and reconfigure can re-point an entry at a different account, so
-        # refuse to let two entries track the same one and keep the entry's
-        # unique id in sync with the account it now authenticates.
         new_unique_id = account.email or account.name
-        if new_unique_id and any(
+        if step_id == STEP_REAUTH:
+            # A reauth repairs the entry's own account. Moving it to another one
+            # is what reconfigure is for, so a token renewal can never make an
+            # entry start showing a different account's usage.
+            await self.async_set_unique_id(new_unique_id or entry.unique_id)
+            self._abort_if_unique_id_mismatch(reason="wrong_account")
+        elif new_unique_id and any(
             other.entry_id != entry.entry_id and other.unique_id == new_unique_id
             for other in self._async_current_entries()
         ):
+            # Reconfigure may switch accounts, but never onto one that another
+            # entry already tracks. The unique id follows the new account.
             return self.async_abort(reason="already_configured")
         return self.async_update_reload_and_abort(
             entry,

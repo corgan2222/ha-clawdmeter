@@ -3,12 +3,14 @@
     "abort": {
       "already_configured": "This Claude account is already set up.",
       "reauth_successful": "[%key:common::config_flow::abort::reauth_successful%]",
-      "reconfigure_successful": "[%key:common::config_flow::abort::reconfigure_successful%]"
+      "reconfigure_successful": "[%key:common::config_flow::abort::reconfigure_successful%]",
+      "wrong_account": "This code belongs to a different Claude account. Sign in as the account this entry tracks, or use Reconfigure to switch accounts."
     },
     "error": {
       "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
       "exchange_failed": "That code could not be exchanged for a token. Please try again.",
-      "missing_code": "Paste the authorization code to continue."
+      "missing_code": "Paste the authorization code to continue.",
+      "unknown": "[%key:common::config_flow::error::unknown%]"
     },
     "step": {
       "reauth_confirm": {
