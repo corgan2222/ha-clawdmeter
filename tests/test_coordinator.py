@@ -197,6 +197,44 @@ WEEK_PACE = "sensor.claude_corgan_max_weekly_pace"
             STATE_UNKNOWN,
         ),
         (
+            {
+                "extra_usage": {
+                    "is_enabled": False,
+                    "utilization": None,
+                    "used_credits": None,
+                    "monthly_limit": None,
+                    "currency": None,
+                    "decimal_places": None,
+                },
+                "spend": {
+                    "enabled": False,
+                    "used": {"amount_minor": None, "exponent": None, "currency": None},
+                },
+            },
+            "off",
+            STATE_UNKNOWN,
+            STATE_UNKNOWN,
+            STATE_UNKNOWN,
+            None,
+            STATE_UNKNOWN,
+        ),
+        (
+            {
+                "spend": {
+                    "enabled": True,
+                    "percent": 5,
+                    "used": {"amount_minor": 100, "exponent": None, "currency": "USD"},
+                    "limit": {"amount_minor": 500, "exponent": 0, "currency": "USD"},
+                }
+            },
+            "on",
+            "5.0",
+            "1.0",
+            "500.0",
+            "USD",
+            STATE_UNKNOWN,
+        ),
+        (
             {},
             STATE_UNKNOWN,
             STATE_UNKNOWN,
@@ -206,7 +244,15 @@ WEEK_PACE = "sensor.claude_corgan_max_weekly_pace"
             STATE_UNKNOWN,
         ),
     ],
-    ids=["spend", "spend-flat-limit", "extra-no-currency", "disabled", "absent"],
+    ids=[
+        "spend",
+        "spend-flat-limit",
+        "extra-no-currency",
+        "disabled",
+        "disabled-all-null",
+        "spend-null-exponent",
+        "absent",
+    ],
 )
 @pytest.mark.usefixtures("entity_registry_enabled_by_default")
 async def test_overage_variants(
