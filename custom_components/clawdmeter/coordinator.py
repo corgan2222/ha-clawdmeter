@@ -304,7 +304,9 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
             token = self.config_entry.data[CONF_ACCESS_TOKEN]
             raw = await self._client.async_get_usage(token)
         except ClawdmeterAuthError as err:
-            raise ConfigEntryAuthFailed(str(err)) from err
+            raise ConfigEntryAuthFailed(
+                translation_domain=DOMAIN, translation_key="auth_failed"
+            ) from err
         except ClawdmeterConnectionError as err:
             return self._handle_fetch_failure(err)
         if 0 < self._fetch_failures <= MAX_FETCH_FAILURES:
@@ -343,7 +345,11 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
                     err,
                 )
             return self.data
-        raise UpdateFailed(str(err)) from err
+        raise UpdateFailed(
+            translation_domain=DOMAIN,
+            translation_key="update_failed",
+            translation_placeholders={"error": str(err)},
+        ) from err
 
     def _log_data_health(self, raw: dict[str, Any], data: ClawdmeterData) -> None:
         """Explain in the log when the API returns no usable usage windows."""

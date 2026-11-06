@@ -95,6 +95,12 @@ async def test_token_refresh_failure(
     await hass.async_block_till_done()
 
     assert mock_config_entry.state is expected_state
+    # The reason shown on the entry is translated either way.
+    assert mock_config_entry.error_reason_translation_key == (
+        "auth_failed"
+        if expected_state is ConfigEntryState.SETUP_ERROR
+        else "update_failed"
+    )
 
 
 async def test_missing_refresh_token_starts_reauth(

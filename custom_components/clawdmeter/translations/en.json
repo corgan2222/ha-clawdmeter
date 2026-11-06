@@ -192,5 +192,13 @@
         }
       }
     }
+  },
+  "exceptions": {
+    "auth_failed": {
+      "message": "The Claude account rejected the stored login. Re-authenticate the integration to continue."
+    },
+    "update_failed": {
+      "message": "Could not fetch the usage data from Anthropic: {error}"
+    }
   }
 }
