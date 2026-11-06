@@ -36,11 +36,8 @@ NEVER_EXPIRES = 9999999999.0
 
 
 @pytest.fixture(autouse=True)
-def auto_enable_custom_integrations(
-    enable_custom_integrations: None,
-) -> Generator[None]:
+def auto_enable_custom_integrations(enable_custom_integrations: None) -> None:
     """Load the clawdmeter custom integration in every test (PHACC)."""
-    yield
 
 
 def pytest_configure(config: pytest.Config) -> None:
