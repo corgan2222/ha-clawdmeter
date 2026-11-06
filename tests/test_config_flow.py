@@ -78,6 +78,8 @@ async def test_missing_code_recovers(
         ({"status": 400}, "exchange_failed"),
         ({"json": {"refresh_token": "no-access-token"}}, "exchange_failed"),
         ({"exc": ClientError()}, "cannot_connect"),
+        ({"status": 500}, "cannot_connect"),
+        ({"exc": RuntimeError()}, "unknown"),
     ],
 )
 @pytest.mark.usefixtures("mock_setup_entry")
@@ -222,12 +224,20 @@ async def test_reconfigure_flow(
     assert mock_config_entry.data[CONF_ACCESS_TOKEN] == "access-token"
 
 
-@pytest.mark.parametrize("start_flow", ["start_reauth_flow", "start_reconfigure_flow"])
+@pytest.mark.parametrize(
+    ("start_flow", "reason"),
+    [
+        # A reauth refuses any other account, configured or not.
+        ("start_reauth_flow", "wrong_account"),
+        ("start_reconfigure_flow", "already_configured"),
+    ],
+)
 @pytest.mark.usefixtures("mock_oauth")
 async def test_reauth_reconfigure_to_existing_account_aborts(
     hass: HomeAssistant,
     mock_config_entry: MockConfigEntry,
     start_flow: str,
+    reason: str,
 ) -> None:
     """Test re-pointing an entry at an already-configured account aborts."""
     # mock_config_entry already tracks ACCOUNT_EMAIL; a second entry for another
@@ -243,9 +253,27 @@ async def test_reauth_reconfigure_to_existing_account_aborts(
     await hass.async_block_till_done()
 
     assert result["type"] is FlowResultType.ABORT
-    assert result["reason"] == "already_configured"
+    assert result["reason"] == reason
     # The other entry's identity is left untouched.
     assert other.unique_id == "old@example.com"
+
+
+@pytest.mark.usefixtures("mock_oauth", "mock_setup_entry")
+async def test_reauth_with_another_account_aborts(hass: HomeAssistant) -> None:
+    """Test a reauth cannot move an entry to a different account."""
+    entry = MockConfigEntry(
+        domain=DOMAIN, unique_id="old@example.com", data={CONF_ACCESS_TOKEN: "old"}
+    )
+    entry.add_to_hass(hass)
+
+    result = await entry.start_reauth_flow(hass)
+    result = await _submit_code(hass, result["flow_id"], VALID_CODE)
+    await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "wrong_account"
+    assert entry.unique_id == "old@example.com"
+    assert entry.data[CONF_ACCESS_TOKEN] == "old"
 
 
 @pytest.mark.usefixtures("mock_oauth", "mock_setup_entry")

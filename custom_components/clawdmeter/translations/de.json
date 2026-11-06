@@ -3,12 +3,14 @@
     "abort": {
       "already_configured": "Dieses Claude-Konto ist bereits eingerichtet.",
       "reauth_successful": "Die erneute Authentifizierung war erfolgreich",
-      "reconfigure_successful": "Die Neukonfiguration war erfolgreich"
+      "reconfigure_successful": "Die Neukonfiguration war erfolgreich",
+      "wrong_account": "Dieser Code gehört zu einem anderen Claude-Konto. Melde dich mit dem Konto an, das dieser Eintrag verfolgt, oder wechsle das Konto über „Neu konfigurieren“."
     },
     "error": {
       "cannot_connect": "Verbindung fehlgeschlagen",
       "exchange_failed": "Der Code konnte nicht gegen ein Token eingetauscht werden. Bitte versuche es erneut.",
-      "missing_code": "Füge den Autorisierungscode ein, um fortzufahren."
+      "missing_code": "Füge den Autorisierungscode ein, um fortzufahren.",
+      "unknown": "Unerwarteter Fehler"
     },
     "step": {
       "reauth_confirm": {
