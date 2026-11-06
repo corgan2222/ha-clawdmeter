@@ -169,5 +169,25 @@
         "name": "Wöchentliche Nutzung"
       }
     }
+  },
+  "issues": {
+    "stale_entities": {
+      "title": "Sensoren ohne Daten nach dem Planwechsel",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Sensoren ohne Daten entfernen",
+            "description": "Der Plan hat von {old_plan} zu {new_plan} gewechselt. Für diese Sensoren liefert das Konto keine Daten mehr, sie blieben dauerhaft unbekannt:\n\n{entities}",
+            "menu_options": {
+              "confirm": "Diese Sensoren entfernen",
+              "ignore": "Behalten"
+            }
+          }
+        },
+        "abort": {
+          "ignored": "Die Sensoren bleiben. Du kannst sie später noch in der Entitätenliste löschen."
+        }
+      }
+    }
   }
 }

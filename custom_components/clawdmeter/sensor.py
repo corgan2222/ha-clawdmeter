@@ -6,6 +6,9 @@ from datetime import datetime
 from typing import Any, override
 
 from homeassistant.components.sensor import (
+    DOMAIN as SENSOR_DOMAIN,
+)
+from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
@@ -13,6 +16,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfTime
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
@@ -23,6 +27,7 @@ from .const import (
     ATTR_MODELS,
     ATTR_RESETS_AT,
     ATTR_WINDOW,
+    DOMAIN,
     OVERAGE_SEVERITIES,
     PACE_FRAMES,
 )
@@ -32,6 +37,7 @@ from .coordinator import (
     ClawdmeterDataUpdateCoordinator,
 )
 from .entity import ClawdmeterEntity
+from .repairs import async_create_stale_entities_issue
 
 PARALLEL_UPDATES = 0
 
@@ -47,6 +53,9 @@ class ClawdmeterSensorEntityDescription(SensorEntityDescription):
     value_fn: Callable[[ClawdmeterData], StateType | datetime]
     unit_fn: Callable[[ClawdmeterData], str | None] | None = None
     attrs_fn: Callable[[ClawdmeterData], dict[str, Any] | None] | None = None
+    # Whether this account has ever reported what the sensor shows. Checked at
+    # setup, and only for a sensor this install does not have yet.
+    exists_fn: Callable[[ClawdmeterDataUpdateCoordinator], bool] = lambda _: True
 
 
 def _window_attrs(data: ClawdmeterData) -> dict[str, Any] | None:
@@ -118,6 +127,7 @@ SENSORS: tuple[ClawdmeterSensorEntityDescription, ...] = (
         suggested_display_precision=0,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data.sonnet_usage,
+        exists_fn=lambda coordinator: "sonnet" in coordinator.models_seen,
     ),
     ClawdmeterSensorEntityDescription(
         key="sonnet_reset",
@@ -125,6 +135,7 @@ SENSORS: tuple[ClawdmeterSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data.sonnet_reset,
+        exists_fn=lambda coordinator: "sonnet" in coordinator.models_seen,
     ),
     ClawdmeterSensorEntityDescription(
         key="opus_usage",
@@ -134,6 +145,7 @@ SENSORS: tuple[ClawdmeterSensorEntityDescription, ...] = (
         suggested_display_precision=0,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data.opus_usage,
+        exists_fn=lambda coordinator: "opus" in coordinator.models_seen,
     ),
     ClawdmeterSensorEntityDescription(
         key="opus_reset",
@@ -141,6 +153,7 @@ SENSORS: tuple[ClawdmeterSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data.opus_reset,
+        exists_fn=lambda coordinator: "opus" in coordinator.models_seen,
     ),
     ClawdmeterSensorEntityDescription(
         key="extra_usage",
@@ -306,6 +319,7 @@ SENSORS: tuple[ClawdmeterSensorEntityDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data.model_usage,
         attrs_fn=_model_attrs,
+        exists_fn=lambda coordinator: bool(coordinator.models_seen),
     ),
     ClawdmeterSensorEntityDescription(
         key="pace_frame",
@@ -325,9 +339,29 @@ async def async_setup_entry(
 ) -> None:
     """Set up the Clawdmeter sensors."""
     coordinator = entry.runtime_data
-    async_add_entities(
-        ClawdmeterSensor(coordinator, entry, description) for description in SENSORS
-    )
+    entity_registry = er.async_get(hass)
+    entities: list[ClawdmeterSensor] = []
+    without_data: list[str] = []
+    for description in SENSORS:
+        entity_id = entity_registry.async_get_entity_id(
+            SENSOR_DOMAIN, DOMAIN, f"{entry.entry_id}_{description.key}"
+        )
+        # A sensor this install already has is always kept, so an existing
+        # setup stays exactly as it was. A new one is held back while the
+        # account has never reported what it would show, instead of being
+        # created to sit at unknown.
+        if description.exists_fn(coordinator):
+            entities.append(ClawdmeterSensor(coordinator, entry, description))
+        elif entity_id is not None:
+            entities.append(ClawdmeterSensor(coordinator, entry, description))
+            without_data.append(entity_id)
+    async_add_entities(entities)
+
+    # After a plan change the user decides whether those go.
+    if without_data and coordinator.plan_changed_from is not None:
+        async_create_stale_entities_issue(
+            hass, entry, coordinator.plan_changed_from, without_data
+        )
 
 
 class ClawdmeterSensor(ClawdmeterEntity, SensorEntity):

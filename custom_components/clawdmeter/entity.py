@@ -4,21 +4,11 @@ from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import CONF_ACCOUNT_NAME, CONF_PLAN, DOMAIN
-from .coordinator import ClawdmeterConfigEntry, ClawdmeterDataUpdateCoordinator
-
-
-def account_title(name: str | None, plan: str | None) -> str:
-    """Build a "Claude <name> (<plan>)" label for an account.
-
-    Drives both the config entry title and the device name, so entity ids end up
-    as ``claude_<name>_<plan>_<type>`` (e.g. ``claude_stefan_max_extra_usage``).
-    """
-    parts = ["Claude"]
-    if name:
-        parts.append(name)
-    if plan:
-        parts.append(f"({plan})")
-    return " ".join(parts)
+from .coordinator import (
+    ClawdmeterConfigEntry,
+    ClawdmeterDataUpdateCoordinator,
+    account_title,
+)
 
 
 class ClawdmeterEntity(CoordinatorEntity[ClawdmeterDataUpdateCoordinator]):
