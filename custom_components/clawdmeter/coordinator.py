@@ -622,11 +622,21 @@ class _Overage:
     severity: str | None
 
 
+def _divisor(places: Any) -> float:
+    """Return the divisor for an amount with ``places`` decimal places.
+
+    The API sends null instead of leaving the key out when extra usage is off,
+    so null counts as missing and falls back to two places.
+    """
+    value = as_float(places)
+    return 10 ** (2 if value is None else value)
+
+
 def _money(block: Any) -> tuple[float | None, str | None]:
     """Read an (amount, currency) pair from a spend money block or flat number."""
     if isinstance(block, dict):
         amount = as_float(block.get("amount_minor"))
-        scale = 10 ** block.get("exponent", 2)
+        scale = _divisor(block.get("exponent"))
         return (amount / scale if amount is not None else None, block.get("currency"))
     amount = as_float(block)
     return (amount / 100 if amount is not None else None, None)
@@ -653,7 +663,7 @@ def _overage(raw: dict[str, Any]) -> _Overage:
     elif spend is not None:
         enabled = bool(spend.get("enabled"))
     if extra:
-        divisor = 10 ** extra.get("decimal_places", 2)
+        divisor = _divisor(extra.get("decimal_places"))
         used = as_float(extra.get("used_credits"))
         limit = as_float(extra.get("monthly_limit"))
         currency = extra.get("currency")

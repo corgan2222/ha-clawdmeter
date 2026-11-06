@@ -101,7 +101,7 @@ class TokenBundle:
         return cls(
             access_token=payload["access_token"],
             refresh_token=payload.get("refresh_token") or fallback_refresh,
-            expires_at=time.time() + payload.get("expires_in", 3600),
+            expires_at=time.time() + (payload.get("expires_in") or 3600),
         )
 
 
