@@ -201,26 +201,29 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
         await self._async_restore()
         await self._async_refresh_account()
         plan = self.config_entry.data.get(CONF_PLAN)
-        if self.plan_changed_from is None and self._stored_plan not in (None, plan):
-            # Changed by a reauth or reconfigure, which rewrite the entry.
-            self.plan_changed_from = self._stored_plan
-        if self.plan_changed_from is not None:
-            # What the old plan reported says nothing about the new one: Max has
-            # a five-hour window and Ultra has none, and the per-model caps
-            # differ too. Both are learned again from the next poll.
-            LOGGER.info(
-                "Plan changed from %s to %s, learning its windows again",
-                self.plan_changed_from,
-                plan,
-            )
-            self._session_seen = False
-            self.models_seen.clear()
+        # The stored plan is the one the remembered state below was learned
+        # under, whether the entry changed through the profile lookup above, a
+        # reauth or a reconfigure.
+        if self._stored_plan in (None, plan):
+            return
+        self.plan_changed_from = self._stored_plan
+        # What the old plan reported says nothing about the new one: Max has a
+        # five-hour window and Ultra has none, and the per-model caps differ too.
+        # The samples and the day's peak would mix two different windows.
+        LOGGER.info(
+            "Plan changed from %s to %s, learning its windows again",
+            self.plan_changed_from,
+            plan,
+        )
+        self._session_seen = False
+        self.models_seen.clear()
+        self._samples.clear()
+        self._peak_value = None
+        self._peak_date = None
 
     async def _async_restore(self) -> None:
         """Restore the burn-rate window and daily peak from the last run."""
-        stored = await self._store.async_load()
-        if stored is None:
-            return
+        stored = await self._store.async_load() or {}
         self._samples = deque(
             _Sample(item["ts"], item["pct"]) for item in stored.get("samples", [])
         )
@@ -229,7 +232,14 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
         self._peak_date = date.fromisoformat(peak_date) if peak_date else None
         self._session_seen = bool(stored.get("session_seen", False))
         self.models_seen = set(stored.get("models_seen", []))
-        self._stored_plan = stored.get("plan")
+        if "plan" in stored:
+            self._stored_plan = stored["plan"]
+            return
+        # Pin the plan before the profile lookup can change the entry. The state
+        # is otherwise only saved after a successful poll, so a setup that
+        # failed after the lookup would not see the change when it is retried.
+        self._stored_plan = self.config_entry.data.get(CONF_PLAN)
+        await self._store.async_save(self._persisted_state())
 
     async def _async_refresh_account(self) -> None:
         """Bring the stored plan and account name up to date.
@@ -268,8 +278,6 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
             "Account details changed, updating the entry: %s",
             changes or {"title": title},
         )
-        if CONF_PLAN in changes:
-            self.plan_changed_from = data.get(CONF_PLAN)
         self.hass.config_entries.async_update_entry(
             self.config_entry, data=new_data, title=title
         )
