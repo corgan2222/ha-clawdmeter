@@ -2,7 +2,7 @@
 
 from collections.abc import Generator
 from typing import Any
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, PropertyMock, patch
 
 from homeassistant.const import CONF_ACCESS_TOKEN
 import pytest
@@ -56,6 +56,17 @@ def _skip_account_refresh(request: pytest.FixtureRequest) -> Generator[None]:
     with patch(
         "custom_components.clawdmeter.coordinator."
         "ClawdmeterDataUpdateCoordinator._async_refresh_account"
+    ):
+        yield
+
+
+@pytest.fixture
+def entity_registry_enabled_by_default() -> Generator[None]:
+    """Create every entity enabled, like core's fixture of the same name."""
+    with patch(
+        "homeassistant.helpers.entity.Entity.entity_registry_enabled_default",
+        return_value=True,
+        new_callable=PropertyMock,
     ):
         yield
 

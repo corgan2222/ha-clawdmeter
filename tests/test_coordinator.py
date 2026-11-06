@@ -208,6 +208,7 @@ WEEK_PACE = "sensor.claude_corgan_max_weekly_pace"
     ],
     ids=["spend", "spend-flat-limit", "extra-no-currency", "disabled", "absent"],
 )
+@pytest.mark.usefixtures("entity_registry_enabled_by_default")
 async def test_overage_variants(
     hass: HomeAssistant,
     aioclient_mock: AiohttpClientMocker,
