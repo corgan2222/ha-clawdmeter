@@ -67,7 +67,11 @@ async def test_connection_failure_is_retried(
 @pytest.mark.parametrize(
     ("token_kwargs", "expected_state"),
     [
+        ({"status": 400}, ConfigEntryState.SETUP_ERROR),
         ({"status": 401}, ConfigEntryState.SETUP_ERROR),
+        # A rate limit or a server error is no reason to ask for a new login.
+        ({"status": 429}, ConfigEntryState.SETUP_RETRY),
+        ({"status": 500}, ConfigEntryState.SETUP_RETRY),
         ({"exc": ClientError()}, ConfigEntryState.SETUP_RETRY),
     ],
 )
