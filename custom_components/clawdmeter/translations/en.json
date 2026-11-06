@@ -169,5 +169,25 @@
         "title": "Clawdmeter options"
       }
     }
+  },
+  "issues": {
+    "stale_entities": {
+      "title": "Sensors without data after the plan change",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Remove sensors without data",
+            "description": "The plan changed from {old_plan} to {new_plan}. The account no longer reports data for these sensors, so they would stay unknown:\n\n{entities}",
+            "menu_options": {
+              "confirm": "Remove these sensors",
+              "ignore": "Keep them"
+            }
+          }
+        },
+        "abort": {
+          "ignored": "The sensors stay. You can still delete them later in the entity list."
+        }
+      }
+    }
   }
 }

@@ -6,23 +6,29 @@ from typing import Any
 
 from aiohttp import ClientError
 from freezegun.api import FrozenDateTimeFactory
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import (
     EVENT_HOMEASSISTANT_FINAL_WRITE,
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
 from custom_components.clawdmeter.const import (
+    CONF_PLAN,
     CONF_SESSION_FALLBACK,
+    DOMAIN,
     MAX_FETCH_FAILURES,
+    PROFILE_ENDPOINT,
     USAGE_ENDPOINT,
 )
 
 from . import setup_integration
+from .conftest import PROFILE_RESPONSE
 
 BURN_5M = "sensor.claude_corgan_max_burn_rate_5_min"
 BURN_30M = "sensor.claude_corgan_max_burn_rate_30_min"
@@ -502,6 +508,158 @@ async def test_session_falls_back_to_the_weekly_window(
     assert session.attributes["window"] == "weekly"
     # The projections inherit the weekly horizon, so they carry the same label.
     assert hass.states.get(RESETS_IN).attributes["window"] == "weekly"
+
+
+async def test_weekly_projection_uses_the_average_rate(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Test the weekly fallback projects from the average since the week opened.
+
+    The 30-minute burn rate is zero whenever nothing is in use, which across a
+    week is most of the time, so it would leave the projections empty.
+    """
+    freezer.move_to("2026-06-25T12:00:00+00:00")
+    # 16 % used, 48 h into the week, 120 h left: 1/3 %/h on average.
+    aioclient_mock.get(
+        USAGE_ENDPOINT,
+        json={
+            "seven_day": {"utilization": 16, "resets_at": "2026-06-30T12:00:00+00:00"}
+        },
+    )
+    await setup_integration(hass, mock_config_entry)
+
+    # 84 % left at 1/3 %/h is 252 h.
+    assert float(hass.states.get(TIME_TO_LIMIT).state) == pytest.approx(252 * 60)
+    assert float(hass.states.get(RUNWAY_MARGIN).state) == pytest.approx(132 * 60)
+    assert hass.states.get(LIMIT_REACHED).state == "off"
+    assert hass.states.get(LIMIT_ETA).state != STATE_UNKNOWN
+    assert hass.states.get(PACE_FRAME).state == "green"
+    # The burn rate still reports the current activity, not the average.
+    assert float(hass.states.get(BURN_30M).state) == 0.0
+
+
+@pytest.mark.account_refresh
+async def test_plan_follows_the_profile(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    entity_registry: er.EntityRegistry,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """Test a plan changed since setup is picked up without a reauth.
+
+    The entity ids an earlier version created keep their name; only the entry
+    title, the device and the plan sensor follow the new plan.
+    """
+    mock_config_entry.add_to_hass(hass)
+    entity_registry.async_get_or_create(
+        "sensor",
+        DOMAIN,
+        f"{mock_config_entry.entry_id}_plan",
+        suggested_object_id="claude_corgan_max_plan",
+        config_entry=mock_config_entry,
+    )
+    aioclient_mock.get(
+        PROFILE_ENDPOINT,
+        json={**PROFILE_RESPONSE, "organization": {"plan_display_name": "Ultra"}},
+    )
+    aioclient_mock.get(USAGE_ENDPOINT, json=_session_payload(10))
+    await setup_integration(hass, mock_config_entry)
+
+    assert mock_config_entry.data[CONF_PLAN] == "Ultra"
+    assert mock_config_entry.title == "Claude Corgan (Ultra)"
+    assert hass.states.get("sensor.claude_corgan_max_plan").state == "Ultra"
+
+
+@pytest.mark.account_refresh
+@pytest.mark.parametrize(
+    ("title", "expected"),
+    [
+        # Left behind on the old plan by a reauth of an older version.
+        ("Claude Corgan (Max)", "Claude Corgan (Ultra)"),
+        # Typed by the user.
+        ("My Claude", "My Claude"),
+    ],
+)
+async def test_title_follows_only_when_generated(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+    title: str,
+    expected: str,
+) -> None:
+    """Test the entry title follows the plan unless the user renamed it."""
+    mock_config_entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(
+        mock_config_entry,
+        title=title,
+        data={**mock_config_entry.data, CONF_PLAN: "Ultra"},
+    )
+    aioclient_mock.get(
+        PROFILE_ENDPOINT,
+        json={**PROFILE_RESPONSE, "organization": {"plan_display_name": "Ultra"}},
+    )
+    aioclient_mock.get(USAGE_ENDPOINT, json=_session_payload(10))
+    await setup_integration(hass, mock_config_entry)
+
+    assert mock_config_entry.title == expected
+
+
+@pytest.mark.account_refresh
+async def test_plan_survives_a_failed_profile_lookup(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """Test a profile lookup that fails leaves the stored plan and setup alone."""
+    aioclient_mock.get(PROFILE_ENDPOINT, status=500)
+    aioclient_mock.get(USAGE_ENDPOINT, json=_session_payload(10))
+    await setup_integration(hass, mock_config_entry)
+
+    assert mock_config_entry.state is ConfigEntryState.LOADED
+    assert mock_config_entry.data[CONF_PLAN] == "Max"
+
+
+async def test_new_install_skips_sensors_without_data(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """Test a fresh install creates no sensor the account cannot fill."""
+    aioclient_mock.get(USAGE_ENDPOINT, json=_session_payload(10))
+    await setup_integration(hass, mock_config_entry)
+
+    assert hass.states.get(OPUS_USAGE) is None
+    assert hass.states.get("sensor.claude_corgan_max_weekly_sonnet_usage") is None
+    assert hass.states.get(MODEL_USAGE) is None
+    # Sensors the account does fill are unaffected.
+    assert hass.states.get(SESSION_USAGE).state == "10"
+
+
+async def test_existing_install_keeps_its_sensors(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    entity_registry: er.EntityRegistry,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """Test a sensor an install already has stays, even without data.
+
+    Removing it is the user's call, not something an update does on its own.
+    """
+    mock_config_entry.add_to_hass(hass)
+    entity_registry.async_get_or_create(
+        "sensor",
+        DOMAIN,
+        f"{mock_config_entry.entry_id}_opus_usage",
+        suggested_object_id="claude_corgan_max_weekly_opus_usage",
+        config_entry=mock_config_entry,
+    )
+    aioclient_mock.get(USAGE_ENDPOINT, json=_session_payload(10))
+    await setup_integration(hass, mock_config_entry)
+
+    assert hass.states.get(OPUS_USAGE).state == STATE_UNKNOWN
 
 
 async def test_session_window_wins_once_it_appears(

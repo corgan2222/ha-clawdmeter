@@ -75,7 +75,9 @@ stays in sync on every poll.
 ## 📊 Entities
 
 Every account becomes one device named `Claude <name> (<plan>)`, so entities read as
-`claude_<name>_<plan>_<type>`. In the device view they split into two groups: the
+`claude_<name>_<plan>_<type>`. The plan is read from your profile on every start, so the
+device and the Plan sensor follow an upgrade; entity ids keep the plan they were created
+under. In the device view they split into two groups: the
 locally **computed** projections are the primary **Sensors**, and the **raw API**
 readings sit under **Diagnostic**.
 
@@ -94,8 +96,12 @@ readings sit under **Diagnostic**.
 | Group | Entities |
 | --- | --- |
 | Account | Account · Plan |
-| Usage | Session usage · Weekly usage · Weekly Sonnet usage · Weekly Opus usage |
+| Usage | Session usage · Weekly usage · Weekly model usage · Weekly Sonnet usage · Weekly Opus usage |
 | Resets | Session reset · Weekly reset · Weekly Sonnet reset · Weekly Opus reset |
+
+The Sonnet and Opus sensors only exist for accounts that report a weekly cap for that model.
+Weekly model usage covers whichever model is capped, and lists all of them in its `models`
+attribute.
 | Overage | Extra usage · Extra usage status · Extra usage credits · Extra usage limit · Extra usage enabled |
 
 ## 💤 States when Claude is idle
@@ -111,6 +117,10 @@ keep history graphs continuous and meaningful:
 | Pace frame · Animation group | `green` · `idle` | Calm creature |
 | Limit reached before reset | `off` | Nothing at risk |
 | Time to limit · Runway margin | `unknown` | No ETA exists while usage is flat — a `0` would wrongly read as "at the limit now" |
+
+Accounts without a five-hour window project from the weekly window instead (their
+`window` attribute reads `weekly`). There the projections use the average rate since the
+week opened rather than the last 30 minutes, so they stay populated while you are idle.
 | Usage %, resets, extra usage | live API value | Reflect the account regardless of activity |
 
 ## 🚀 Installation

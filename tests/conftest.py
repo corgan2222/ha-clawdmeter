@@ -43,6 +43,26 @@ def auto_enable_custom_integrations(
     yield
 
 
+def pytest_configure(config: pytest.Config) -> None:
+    """Register the marker that opts a test into the startup profile lookup."""
+    config.addinivalue_line(
+        "markers", "account_refresh: run the real profile lookup at setup"
+    )
+
+
+@pytest.fixture(autouse=True)
+def _skip_account_refresh(request: pytest.FixtureRequest) -> Generator[None]:
+    """Keep the startup profile lookup out of tests that do not mock it."""
+    if request.node.get_closest_marker("account_refresh"):
+        yield
+        return
+    with patch(
+        "custom_components.clawdmeter.coordinator."
+        "ClawdmeterDataUpdateCoordinator._async_refresh_account"
+    ):
+        yield
+
+
 @pytest.fixture(autouse=True)
 def _mock_storage(hass_storage: dict[str, Any]) -> None:
     """Back the coordinator's Store with in-memory storage in every test."""

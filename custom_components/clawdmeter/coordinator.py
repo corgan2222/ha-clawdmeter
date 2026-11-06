@@ -65,6 +65,35 @@ type ClawdmeterConfigEntry = ConfigEntry[ClawdmeterDataUpdateCoordinator]
 WEEK_SECONDS = 7 * 24 * 60 * 60
 
 
+def account_title(name: str | None, plan: str | None) -> str:
+    """Build a "Claude <name> (<plan>)" label for an account.
+
+    Drives both the config entry title and the device name, so entity ids end up
+    as ``claude_<name>_<plan>_<type>`` (e.g. ``claude_stefan_max_extra_usage``).
+    An id keeps the plan it was created under when the plan changes later.
+    """
+    parts = ["Claude"]
+    if name:
+        parts.append(name)
+    if plan:
+        parts.append(f"({plan})")
+    return " ".join(parts)
+
+
+def follow_title(entry: ConfigEntry, name: str | None, plan: str | None) -> str:
+    """Return the entry title to use for new account details.
+
+    A title in the generated "Claude <name> (<plan>)" shape follows the
+    account, including one an older version left on a superseded plan. A title
+    the user typed stays as it is.
+    """
+    base = account_title(entry.data.get(CONF_ACCOUNT_NAME), None)
+    generated = entry.title == base or (
+        entry.title.startswith(f"{base} (") and entry.title.endswith(")")
+    )
+    return account_title(name, plan) if generated else entry.title
+
+
 @dataclass(frozen=True, slots=True)
 class ClawdmeterData:
     """Parsed usage plus every locally derived projection."""
@@ -159,9 +188,35 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
         # must not be read as "this plan has no session limit".
         self._session_seen = False
         self._logged_fallback = False
+        # Sticky for the same reason: a model whose weekly figure has arrived
+        # once keeps its sensors through a poll that happens to omit it.
+        self.models_seen: set[str] = set()
+        # The plan this entry had before, when it changed since the last run.
+        self.plan_changed_from: str | None = None
+        self._stored_plan: str | None = None
 
     @override
     async def _async_setup(self) -> None:
+        """Restore the state of the last run and refresh the account details."""
+        await self._async_restore()
+        await self._async_refresh_account()
+        plan = self.config_entry.data.get(CONF_PLAN)
+        if self.plan_changed_from is None and self._stored_plan not in (None, plan):
+            # Changed by a reauth or reconfigure, which rewrite the entry.
+            self.plan_changed_from = self._stored_plan
+        if self.plan_changed_from is not None:
+            # What the old plan reported says nothing about the new one: Max has
+            # a five-hour window and Ultra has none, and the per-model caps
+            # differ too. Both are learned again from the next poll.
+            LOGGER.info(
+                "Plan changed from %s to %s, learning its windows again",
+                self.plan_changed_from,
+                plan,
+            )
+            self._session_seen = False
+            self.models_seen.clear()
+
+    async def _async_restore(self) -> None:
         """Restore the burn-rate window and daily peak from the last run."""
         stored = await self._store.async_load()
         if stored is None:
@@ -173,6 +228,51 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
         peak_date = stored.get("peak_date")
         self._peak_date = date.fromisoformat(peak_date) if peak_date else None
         self._session_seen = bool(stored.get("session_seen", False))
+        self.models_seen = set(stored.get("models_seen", []))
+        self._stored_plan = stored.get("plan")
+
+    async def _async_refresh_account(self) -> None:
+        """Bring the stored plan and account name up to date.
+
+        The config flow writes them once, so a plan changed later on (an
+        upgrade, a tier renamed by the server) would otherwise keep its old name
+        until the next reauth. This is best effort: the usage poll that follows
+        reports a real auth or connection problem on its own.
+        """
+        try:
+            await self._async_ensure_token()
+            account = await self._client.async_get_account(
+                self.config_entry.data[CONF_ACCESS_TOKEN]
+            )
+        except (ClawdmeterAuthError, ClawdmeterConnectionError) as err:
+            LOGGER.debug("Could not refresh the account details: %s", err)
+            return
+        data = self.config_entry.data
+        changes = {
+            key: value
+            for key, value in (
+                (CONF_PLAN, account.plan),
+                (CONF_ACCOUNT_NAME, account.name),
+            )
+            if value is not None and value != data.get(key)
+        }
+        new_data = {**data, **changes}
+        title = follow_title(
+            self.config_entry,
+            new_data.get(CONF_ACCOUNT_NAME),
+            new_data.get(CONF_PLAN),
+        )
+        if not changes and title == self.config_entry.title:
+            return
+        LOGGER.info(
+            "Account details changed, updating the entry: %s",
+            changes or {"title": title},
+        )
+        if CONF_PLAN in changes:
+            self.plan_changed_from = data.get(CONF_PLAN)
+        self.hass.config_entries.async_update_entry(
+            self.config_entry, data=new_data, title=title
+        )
 
     @callback
     def _persisted_state(self) -> dict[str, Any]:
@@ -182,6 +282,8 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
             "peak_value": self._peak_value,
             "peak_date": self._peak_date.isoformat() if self._peak_date else None,
             "session_seen": self._session_seen,
+            "models_seen": sorted(self.models_seen),
+            "plan": self.config_entry.data.get(CONF_PLAN),
         }
 
     @override
@@ -280,6 +382,13 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
 
         if session_usage is not None or session_reset is not None:
             self._session_seen = True
+        for model, usage, reset in (
+            ("sonnet", sonnet_usage, sonnet_reset),
+            ("opus", opus_usage, opus_reset),
+        ):
+            if usage is not None or reset is not None:
+                self.models_seen.add(model)
+        self.models_seen.update(row.slug for row in scoped(rows) if row.slug)
         session_window = WINDOW_SESSION if self._session_seen else None
         if not self._session_seen and self.config_entry.options.get(
             CONF_SESSION_FALLBACK, DEFAULT_SESSION_FALLBACK
@@ -310,9 +419,17 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
         burn_slow = self._rate_per_hour(BURN_WINDOW_SLOW.total_seconds())
         usage_rate = self._rate_per_minute()
 
+        # The 30-minute burn rate says how fast usage moves right now, the right
+        # horizon for a five-hour window. Across a week it is zero most of the
+        # time and would leave every projection empty, so the weekly window
+        # projects from its average since the week opened instead.
+        projection_rate: float | None = burn_slow
+        if session_window == WINDOW_WEEKLY:
+            projection_rate = _average_rate(session_usage, session_reset, now)
+
         session_reset_in = _minutes_until(session_reset, now)
-        time_to_limit = _time_to_limit(session_usage, burn_slow)
-        runway_pace = _runway_pace(time_to_limit, session_reset_in, burn_slow)
+        time_to_limit = _time_to_limit(session_usage, projection_rate)
+        runway_pace = _runway_pace(time_to_limit, session_reset_in, projection_rate)
         limit_eta = (
             now + timedelta(minutes=time_to_limit)
             if time_to_limit is not None
@@ -357,7 +474,7 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
             limit_eta=limit_eta,
             runway_pace=runway_pace,
             runway_margin=_runway_margin(time_to_limit, session_reset_in),
-            runway_over=_runway_over(time_to_limit, session_reset_in, burn_slow),
+            runway_over=_runway_over(time_to_limit, session_reset_in, projection_rate),
             pace_frame=_pace_frame(runway_pace),
         )
 
@@ -558,15 +675,31 @@ def _overage(raw: dict[str, Any]) -> _Overage:
     return _Overage(enabled, None, None, None, None, severity)
 
 
+def _week_elapsed(reset: datetime, now: datetime) -> float:
+    """Return the seconds since the weekly window ending at ``reset`` opened."""
+    return WEEK_SECONDS - (reset - now).total_seconds()
+
+
 def _week_pace(
     usage: float | None, reset: datetime | None, now: datetime
 ) -> float | None:
     """Return how far ahead (+) or behind (-) the linear weekly pace usage is."""
     if usage is None or reset is None:
         return None
-    elapsed = WEEK_SECONDS - (reset - now).total_seconds()
-    percent_elapsed = elapsed / WEEK_SECONDS * 100
+    percent_elapsed = _week_elapsed(reset, now) / WEEK_SECONDS * 100
     return round(usage - percent_elapsed, 1)
+
+
+def _average_rate(
+    usage: float | None, reset: datetime | None, now: datetime
+) -> float | None:
+    """Return the mean usage in %/h since the weekly window opened."""
+    if usage is None or reset is None:
+        return None
+    elapsed_hours = _week_elapsed(reset, now) / 3600
+    if elapsed_hours <= 0:
+        return None
+    return usage / elapsed_hours
 
 
 def _minutes_until(target: datetime | None, now: datetime) -> float | None:

@@ -37,7 +37,7 @@ from .const import (
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
 )
-from .entity import account_title
+from .coordinator import account_title, follow_title
 
 STEP_USER = "user"
 STEP_REAUTH = "reauth_confirm"
@@ -163,6 +163,7 @@ class ClawdmeterConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_update_reload_and_abort(
             entry,
             unique_id=new_unique_id or entry.unique_id,
+            title=follow_title(entry, account.name, account.plan),
             data_updates=data,
         )
 
