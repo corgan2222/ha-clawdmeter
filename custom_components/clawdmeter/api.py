@@ -2,7 +2,8 @@
 
 import asyncio
 import base64
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable
+from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 import hashlib
 import secrets
@@ -10,7 +11,14 @@ import time
 from typing import Any
 from urllib.parse import urlencode
 
-from aiohttp import ClientError, ClientResponse, ClientSession, ClientTimeout
+from aiohttp import (
+    ClientConnectorError,
+    ClientError,
+    ClientResponse,
+    ClientSession,
+    ClientTimeout,
+    ConnectionTimeoutError,
+)
 
 from .const import (
     BETA_HEADER,
@@ -146,36 +154,39 @@ class ClawdmeterClient:
         """Store the shared aiohttp session."""
         self._session = session
 
-    async def _request_with_retry(
-        self, send: Callable[[], Awaitable[ClientResponse]]
-    ) -> ClientResponse:
-        """Send a request, retrying only genuine connection failures.
+    async def _async_request(
+        self, send: Callable[[], AbstractAsyncContextManager[ClientResponse]]
+    ) -> tuple[int, dict[str, Any]]:
+        """Send a request and return its status and JSON object body.
 
-        A failed connection never reaches the server, so retrying it cannot trip
-        the endpoint's aggressive rate limit. HTTP error statuses are inspected
-        by the caller and are never retried here, and neither is a timeout: the
-        request may have reached the server, so it is reported as a connection
-        failure instead of escaping as a bare TimeoutError.
+        Only a failure to connect is retried: that request never reached the
+        server, so repeating it cannot trip the endpoint's aggressive rate
+        limit. A dropped connection, a read timeout or a body that is not a JSON
+        object may have counted already, so they are reported as a connection
+        failure instead. The body of an error status is not read and comes back
+        empty; the response is released either way.
         """
-        for attempt, delay in enumerate(CONNECT_RETRY_DELAYS, start=1):
+        delays = iter(CONNECT_RETRY_DELAYS)
+        while True:
             try:
-                return await send()
-            except ClientError as err:
-                LOGGER.debug(
-                    "Connection failed (attempt %s), retrying in %ss: %s",
-                    attempt,
-                    delay,
-                    err,
-                )
+                async with send() as response:
+                    if response.status >= 400:
+                        return response.status, {}
+                    body = await response.json()
+            except (ClientConnectorError, ConnectionTimeoutError) as err:
+                delay = next(delays, None)
+                if delay is None:
+                    raise ClawdmeterConnectionError(str(err)) from err
+                LOGGER.debug("Connection failed, retrying in %ss: %s", delay, err)
                 await asyncio.sleep(delay)
+                continue
             except TimeoutError as err:
                 raise ClawdmeterConnectionError("Request timed out") from err
-        try:
-            return await send()
-        except ClientError as err:
-            raise ClawdmeterConnectionError(str(err)) from err
-        except TimeoutError as err:
-            raise ClawdmeterConnectionError("Request timed out") from err
+            except (ClientError, ValueError) as err:
+                raise ClawdmeterConnectionError(str(err)) from err
+            if not isinstance(body, dict):
+                raise ClawdmeterConnectionError("Response is not a JSON object")
+            return response.status, body
 
     async def async_exchange_code(
         self, code: str, challenge: OAuthChallenge, returned_state: str
@@ -213,7 +224,7 @@ class ClawdmeterClient:
         The Anthropic OAuth token endpoint expects a JSON body; a form-encoded
         body is rejected with HTTP 400 (notably on token refresh).
         """
-        response = await self._request_with_retry(
+        status, body = await self._async_request(
             lambda: self._session.post(
                 OAUTH_TOKEN_URL,
                 json=payload,
@@ -223,16 +234,10 @@ class ClawdmeterClient:
         # Only a refused grant means the stored credentials are gone. A rate
         # limit or a server error says nothing about them, and treating it as
         # one would send the user through a reauth for a passing outage.
-        if response.status in TOKEN_REJECTED_STATUSES:
-            raise ClawdmeterAuthError(f"Token endpoint returned {response.status}")
-        if response.status >= 400:
-            raise ClawdmeterConnectionError(
-                f"Token endpoint returned {response.status}"
-            )
-        try:
-            body = await response.json()
-        except ClientError as err:
-            raise ClawdmeterConnectionError(str(err)) from err
+        if status in TOKEN_REJECTED_STATUSES:
+            raise ClawdmeterAuthError(f"Token endpoint returned {status}")
+        if status >= 400:
+            raise ClawdmeterConnectionError(f"Token endpoint returned {status}")
         return TokenBundle.from_response(body, fallback_refresh=fallback_refresh)
 
     async def async_get_account(self, access_token: str) -> AccountInfo:
@@ -256,7 +261,7 @@ class ClawdmeterClient:
 
     async def _async_get(self, url: str, access_token: str) -> dict[str, Any]:
         """Perform an authenticated GET and return parsed JSON."""
-        response = await self._request_with_retry(
+        status, body = await self._async_request(
             lambda: self._session.get(
                 url,
                 headers={
@@ -266,11 +271,8 @@ class ClawdmeterClient:
                 timeout=ClientTimeout(total=REQUEST_TIMEOUT),
             )
         )
-        if response.status == 401:
+        if status == 401:
             raise ClawdmeterAuthError("Access token rejected")
-        if response.status >= 400:
-            raise ClawdmeterConnectionError(f"{url} returned {response.status}")
-        try:
-            return await response.json()
-        except ClientError as err:
-            raise ClawdmeterConnectionError(str(err)) from err
+        if status >= 400:
+            raise ClawdmeterConnectionError(f"{url} returned {status}")
+        return body
