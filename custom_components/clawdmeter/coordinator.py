@@ -2,7 +2,7 @@
 
 from collections import deque
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta
 import time
 from typing import Any, override
 
@@ -54,6 +54,8 @@ from .limits import (
     KIND_WEEKLY_ALL,
     LimitRow,
     allowances,
+    as_datetime,
+    as_float,
     of_kind,
     parse_limits,
     scoped,
@@ -544,38 +546,18 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
         return self._peak_value
 
 
-def _as_float(value: Any) -> float | None:
-    """Return an API value as a number (parsing numeric strings), else None."""
-    if isinstance(value, bool):
-        return None
-    if isinstance(value, (int, float)):
-        return value
-    if isinstance(value, str):
-        try:
-            return float(value)
-        except ValueError:
-            return None
-    return None
-
-
-def _utilization(section: dict[str, Any] | None) -> float | None:
+def _utilization(section: Any) -> float | None:
     """Pull the utilization percentage out of a usage section."""
-    if not section:
+    if not isinstance(section, dict):
         return None
-    return _as_float(section.get("utilization"))
+    return as_float(section.get("utilization"))
 
 
-def _reset_at(section: dict[str, Any] | None) -> datetime | None:
+def _reset_at(section: Any) -> datetime | None:
     """Parse the ISO reset instant out of a usage section as a UTC datetime."""
-    if not section:
+    if not isinstance(section, dict):
         return None
-    raw = section.get("resets_at")
-    if not raw:
-        return None
-    parsed = dt_util.parse_datetime(raw)
-    if parsed is not None and parsed.tzinfo is None:
-        return parsed.replace(tzinfo=UTC)
-    return parsed
+    return as_datetime(section.get("resets_at"))
 
 
 def _window(
@@ -627,10 +609,10 @@ class _Overage:
 def _money(block: Any) -> tuple[float | None, str | None]:
     """Read an (amount, currency) pair from a spend money block or flat number."""
     if isinstance(block, dict):
-        amount = _as_float(block.get("amount_minor"))
+        amount = as_float(block.get("amount_minor"))
         scale = 10 ** block.get("exponent", 2)
         return (amount / scale if amount is not None else None, block.get("currency"))
-    amount = _as_float(block)
+    amount = as_float(block)
     return (amount / 100 if amount is not None else None, None)
 
 
@@ -656,14 +638,14 @@ def _overage(raw: dict[str, Any]) -> _Overage:
         enabled = bool(spend.get("enabled"))
     if extra:
         divisor = 10 ** extra.get("decimal_places", 2)
-        used = _as_float(extra.get("used_credits"))
-        limit = _as_float(extra.get("monthly_limit"))
+        used = as_float(extra.get("used_credits"))
+        limit = as_float(extra.get("monthly_limit"))
         currency = extra.get("currency")
         if currency is None and spend:
             currency = _money(spend.get("used"))[1]
         return _Overage(
             enabled,
-            _as_float(extra.get("utilization")),
+            as_float(extra.get("utilization")),
             used / divisor if used is not None else None,
             limit / divisor if limit is not None else None,
             currency,
@@ -674,7 +656,7 @@ def _overage(raw: dict[str, Any]) -> _Overage:
         limit_amount, limit_currency = _money(spend.get("limit"))
         return _Overage(
             enabled,
-            _as_float(spend.get("percent")),
+            as_float(spend.get("percent")),
             used_amount,
             limit_amount,
             used_currency or limit_currency,

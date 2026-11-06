@@ -439,7 +439,7 @@
     'last_changed': <ANY>,
     'last_reported': <ANY>,
     'last_updated': <ANY>,
-    'state': '12',
+    'state': '12.0',
   })
 # ---
 # name: test_all_entities[sensor][sensor.claude_corgan_max_extra_usage_credits-entry]
@@ -1064,7 +1064,7 @@
     'last_changed': <ANY>,
     'last_reported': <ANY>,
     'last_updated': <ANY>,
-    'state': '20',
+    'state': '20.0',
   })
 # ---
 # name: test_all_entities[sensor][sensor.claude_corgan_max_session_usage_peak_today-entry]
@@ -1122,7 +1122,7 @@
     'last_changed': <ANY>,
     'last_reported': <ANY>,
     'last_updated': <ANY>,
-    'state': '20',
+    'state': '20.0',
   })
 # ---
 # name: test_all_entities[sensor][sensor.claude_corgan_max_time_to_limit-entry]
@@ -1403,7 +1403,7 @@
     'last_changed': <ANY>,
     'last_reported': <ANY>,
     'last_updated': <ANY>,
-    'state': '8',
+    'state': '8.0',
   })
 # ---
 # name: test_all_entities[sensor][sensor.claude_corgan_max_weekly_pace-entry]
@@ -1619,7 +1619,7 @@
     'last_changed': <ANY>,
     'last_reported': <ANY>,
     'last_updated': <ANY>,
-    'state': '15',
+    'state': '15.0',
   })
 # ---
 # name: test_all_entities[sensor][sensor.claude_corgan_max_weekly_usage-entry]
@@ -1676,6 +1676,6 @@
     'last_changed': <ANY>,
     'last_reported': <ANY>,
     'last_updated': <ANY>,
-    'state': '40',
+    'state': '40.0',
   })
 # ---

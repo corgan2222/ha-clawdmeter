@@ -13,7 +13,7 @@ Three properties of that array drive the design here:
 * ``is_active`` is the server's pick of the row a single-value display should
   show. It is not "this limit applies to the account", it is not guaranteed to
   be set on exactly one row, and it has been observed absent. Nothing here
-  depends on it; it is carried through for callers that want to show it.
+  depends on it, so it is not parsed.
 * ``weekly_scoped_shares[].limit_index`` indexes the **raw** array, including
   rows this module does not understand. Indices are therefore resolved before
   any filtering, which is why :attr:`LimitRow.index` exists.
@@ -36,11 +36,8 @@ class LimitRow:
 
     index: int
     kind: str
-    group: str | None
     percent: float | None
     resets_at: datetime | None
-    severity: str | None
-    is_active: bool | None
     model: str | None
     surface: str | None
 
@@ -65,7 +62,7 @@ class LimitRow:
         return first or None
 
 
-def _as_float(value: Any) -> float | None:
+def as_float(value: Any) -> float | None:
     """Return ``value`` as a float, or ``None`` if it is not numeric."""
     if isinstance(value, bool) or value is None:
         return None
@@ -79,7 +76,7 @@ def _as_float(value: Any) -> float | None:
     return None
 
 
-def _as_datetime(value: Any) -> datetime | None:
+def as_datetime(value: Any) -> datetime | None:
     """Parse an ISO instant into an aware UTC datetime."""
     if not isinstance(value, str) or not value:
         return None
@@ -123,25 +120,13 @@ def parse_limits(raw: Any) -> list[LimitRow]:
         kind = item.get("kind")
         if not isinstance(kind, str) or not kind:
             continue
-        group = item.get("group")
         scope = item.get("scope")
         rows.append(
             LimitRow(
                 index=index,
                 kind=kind,
-                group=group if isinstance(group, str) else None,
-                percent=_as_float(item.get("percent")),
-                resets_at=_as_datetime(item.get("resets_at")),
-                severity=(
-                    item.get("severity")
-                    if isinstance(item.get("severity"), str)
-                    else None
-                ),
-                is_active=(
-                    item.get("is_active")
-                    if isinstance(item.get("is_active"), bool)
-                    else None
-                ),
+                percent=as_float(item.get("percent")),
+                resets_at=as_datetime(item.get("resets_at")),
                 model=_display_name(scope, "model"),
                 surface=_display_name(scope, "surface"),
             )
@@ -184,7 +169,7 @@ def allowances(raw: Any, rows: list[LimitRow]) -> dict[int, float]:
         if not isinstance(item, dict):
             continue
         index = item.get("limit_index")
-        allowance = _as_float(item.get("allowance_percent_of_weekly"))
+        allowance = as_float(item.get("allowance_percent_of_weekly"))
         if isinstance(index, int) and not isinstance(index, bool):
             if index in known and allowance is not None:
                 shares[index] = allowance
