@@ -7,14 +7,14 @@
 <p align="center"><em>Know exactly how much Claude you have left — and how fast you're burning it.</em></p>
 
 <p align="center">
-  <a href="https://hacs.xyz"><img alt="HACS Custom" src="https://img.shields.io/badge/HACS-Custom-41BDF5.svg"></a>
+  <a href="https://www.home-assistant.io"><img alt="Home Assistant 2026.11 or newer" src="https://img.shields.io/badge/Home%20Assistant-2026.11%2B-41BDF5.svg"></a>
   <img alt="Home Assistant" src="https://img.shields.io/badge/Home%20Assistant-integration-1c8edb.svg">
   <img alt="i18n" src="https://img.shields.io/badge/i18n-EN%20%2F%20DE-success.svg">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-green.svg">
 </p>
 
 <p align="center">
-  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=corgan2222&repository=ha-clawdmeter&category=integration"><img alt="Add repository to HACS" src="https://my.home-assistant.io/badges/hacs_repository.svg"></a>
+  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=corgan2222&repository=ha-clawdmeter&category=integration"><img alt="Add repository to the Marketplace" src="https://my.home-assistant.io/badges/hacs_repository.svg"></a>
   <a href="https://my.home-assistant.io/redirect/config_flow_start/?domain=clawdmeter"><img alt="Add integration to Home Assistant" src="https://my.home-assistant.io/badges/config_flow_start.svg"></a>
 </p>
 
@@ -56,7 +56,7 @@ the ESPHome display.
   <img src="https://raw.githubusercontent.com/corgan2222/lovelace-clawdmeter/main/images/card_preview.png" alt="Clawdmeter Lovelace card" width="680">
 </p>
 
-It lives in its own repository — **[corgan2222/lovelace-clawdmeter](https://github.com/corgan2222/lovelace-clawdmeter)** (HACS plugin, `type: custom:clawdmeter-card`).
+It lives in its own repository — **[corgan2222/lovelace-clawdmeter](https://github.com/corgan2222/lovelace-clawdmeter)** (Marketplace plugin, `type: custom:clawdmeter-card`).
 
 ## 🐾 ESPHome companion
 
@@ -126,13 +126,15 @@ week opened rather than the last 30 minutes, so they stay populated while you ar
 ## 🚀 Installation
 
 <p align="center">
-  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=corgan2222&repository=ha-clawdmeter&category=integration"><img alt="Add repository to HACS" src="https://my.home-assistant.io/badges/hacs_repository.svg"></a>
+  <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=corgan2222&repository=ha-clawdmeter&category=integration"><img alt="Add repository to the Marketplace" src="https://my.home-assistant.io/badges/hacs_repository.svg"></a>
   <a href="https://my.home-assistant.io/redirect/config_flow_start/?domain=clawdmeter"><img alt="Add integration to Home Assistant" src="https://my.home-assistant.io/badges/config_flow_start.svg"></a>
 </p>
 
-**HACS (recommended)**
+Clawdmeter needs Home Assistant 2026.11 or newer.
 
-1. **[Add this repository to HACS](https://my.home-assistant.io/redirect/hacs_repository/?owner=corgan2222&repository=ha-clawdmeter&category=integration)** (or in HACS: ⋮ → **Custom repositories** → add it, category **Integration**), then install **Clawdmeter** and restart Home Assistant.
+**Marketplace (recommended)**
+
+1. **[Add this repository to the Marketplace](https://my.home-assistant.io/redirect/hacs_repository/?owner=corgan2222&repository=ha-clawdmeter&category=integration)** (or add `https://github.com/corgan2222/ha-clawdmeter` as a custom repository of the category **Integration** in the Marketplace), then install **Clawdmeter** and restart Home Assistant.
 2. **[Add the Clawdmeter integration](https://my.home-assistant.io/redirect/config_flow_start/?domain=clawdmeter)** (or **Settings → Devices & Services → Add Integration → Clawdmeter**).
 
 **Manual** — copy `custom_components/clawdmeter` into your `config/custom_components/`
