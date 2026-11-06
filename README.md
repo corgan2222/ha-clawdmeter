@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://www.home-assistant.io"><img alt="Home Assistant 2026.11 or newer" src="https://img.shields.io/badge/Home%20Assistant-2026.11%2B-41BDF5.svg"></a>
-  <a href="custom_components/clawdmeter/quality_scale.yaml"><img alt="Quality scale: silver, self-assessed" src="https://img.shields.io/badge/quality%20scale-silver%20(self--assessed)-C0C0C0.svg"></a>
+  <a href="custom_components/clawdmeter/quality_scale.yaml"><img alt="Quality scale: gold, self-assessed" src="https://img.shields.io/badge/quality%20scale-gold%20(self--assessed)-FFD700.svg"></a>
   <img alt="Home Assistant" src="https://img.shields.io/badge/Home%20Assistant-integration-1c8edb.svg">
   <img alt="i18n" src="https://img.shields.io/badge/i18n-EN%20%2F%20DE-success.svg">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-green.svg">
@@ -44,6 +44,17 @@ display, but great on its own dashboard too.
 - **Multi-account** — run a Pro and a Max account side by side; each gets its own device.
 - **Resilient** — rides out brief API outages by holding the last values for a grace window instead of flipping everything to "unavailable".
 - **English & German** UI out of the box, plus a configurable poll interval.
+
+## 🎯 Use cases
+
+- **Stay below your limits** — see at a glance how much of the session and weekly
+  allowance is gone, on any dashboard.
+- **Get warned in time** — a notification when usage passes a threshold, or when the
+  current pace would hit the limit before it resets.
+- **Plan heavy work** — time to limit and runway tell you whether a long session still
+  fits before the next reset.
+- **Put it on your desk** — drive the animated Lovelace card or the ESPHome panel.
+- **Watch extra usage spend** — percentage, credits and the monthly limit.
 
 ## 🃏 Animated Lovelace card
 
@@ -124,6 +135,21 @@ Accounts without a five-hour window project from the weekly window instead (thei
 week opened rather than the last 30 minutes, so they stay populated while you are idle.
 | Usage %, resets, extra usage | live API value | Reflect the account regardless of activity |
 
+## 🔄 How data is updated
+
+- Clawdmeter polls Anthropic's usage endpoint every **300 s** by default (60 to 3600 s,
+  see [Configuration](#-configuration)). Each poll is one request.
+- The profile (account name and plan) is read once each time the integration starts, so
+  a plan upgrade shows up after the next restart without signing in again.
+- The access token is renewed automatically shortly before it expires.
+- Burn rates and projections are computed locally from the polls of the last 30
+  minutes. That window and the day's peak are stored, so a restart does not reset them.
+- On plans without a five-hour limit, such as Ultra, the projections use the average
+  rate since the week opened instead of the last 30 minutes.
+- When the API is unreachable, the last values are kept for up to six polls (about 30
+  minutes at the default interval) before the entities become unavailable. The outage
+  is logged once, and once more when it ends.
+
 ## 🚀 Installation
 
 <p align="center">
@@ -168,6 +194,44 @@ To sign in again or switch to another account, use **Reconfigure** in the entry'
    `config/custom_components/clawdmeter` after a manual install) and restart Home
    Assistant.
 
+## ⚠️ Known limitations
+
+- The usage API is not officially documented and can change without notice. Clawdmeter
+  reads both its older per-window keys and the newer `limits` list.
+- The usage endpoint is strictly rate limited. Polling too often can lock it for about a
+  day, so keep the interval at 300 s unless you have a reason not to.
+- Plans without a five-hour limit, such as Ultra, have no real session window. The
+  session sensors follow the weekly window instead (see the option under
+  [Configuration](#-configuration)).
+- The Sonnet and Opus sensors only exist for accounts that report a weekly cap for that
+  model. A model that starts reporting later gets its sensor after the next restart or
+  reload.
+- Entity ids keep the plan they were created under. After an upgrade from Max to Ultra
+  they still read `…_max_…`, while the device and the Plan sensor show the new plan.
+- Time to limit, runway margin and the limit ETA stay `unknown` while usage is flat,
+  because there is no rate to project from.
+- Each entry tracks one account. Add a second account as a second entry.
+
+## 🛠️ Troubleshooting
+
+- **"Re-authentication required"** — Anthropic rejected the stored login, usually
+  because it expired or was revoked. Open the integration, start the re-authentication
+  and paste a new code, signed in as the same account. To move the entry to another
+  account, use **Reconfigure** instead.
+- **Entities are unavailable** — the API could not be reached for more than six polls in
+  a row. The log has an entry starting with "Error fetching clawdmeter data". The
+  entities recover with the next successful poll.
+- **HTTP 429 in the log** — the endpoint is rate limiting you. Raise the update interval
+  and wait; the lock lifts on its own.
+- **A sensor reads `unknown`** — see
+  [States when Claude is idle](#-states-when-claude-is-idle); most projections need
+  usage to move before they have a value.
+- **"Sensors without data after the plan change"** under Settings → Repairs — your plan
+  changed and some sensors will not get data any more. Remove them there or keep them.
+- **Still stuck** — download the diagnostics (see below) and attach them to an
+  [issue](https://github.com/corgan2222/ha-clawdmeter/issues). Tokens and personal data
+  are redacted.
+
 ## 🔍 Diagnostics
 
 From the device page choose **⋮ → Download diagnostics** to get the raw `usage` and
@@ -195,6 +259,60 @@ action when a chosen usage sensor rises above a threshold.
 
 For the "you'll hit the limit before it resets" case, just trigger on the
 _Limit reached before reset_ binary sensor instead.
+
+## 💡 Examples
+
+Replace `claude_you_max` with the prefix of your own entities and
+`notify.mobile_app_your_phone` with one of your notify actions.
+
+**Notify when the weekly usage passes 80 %**
+
+```yaml
+automation:
+  - alias: "Claude weekly usage above 80 %"
+    triggers:
+      - trigger: numeric_state
+        entity_id: sensor.claude_you_max_weekly_usage
+        above: 80
+    actions:
+      - action: notify.mobile_app_your_phone
+        data:
+          message: >-
+            Claude weekly usage is at
+            {{ states('sensor.claude_you_max_weekly_usage') | round(0) }} %.
+```
+
+**Warn when the current pace hits the limit before it resets**
+
+```yaml
+automation:
+  - alias: "Claude limit before reset"
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.claude_you_max_limit_reached_before_reset
+        to: "on"
+    actions:
+      - action: persistent_notification.create
+        data:
+          title: Claude usage
+          message: >-
+            At the current pace the limit is reached in
+            {{ states('sensor.claude_you_max_time_to_limit') | round(0) }} minutes,
+            before it resets.
+```
+
+**A gauge for the dashboard**
+
+```yaml
+type: gauge
+entity: sensor.claude_you_max_weekly_usage
+min: 0
+max: 100
+severity:
+  green: 0
+  yellow: 70
+  red: 90
+```
 
 ## 🙏 Credits
 

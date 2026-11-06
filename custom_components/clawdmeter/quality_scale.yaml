@@ -1,7 +1,7 @@
 # Self-assessment against the Home Assistant integration quality scale
 # (rules as of Home Assistant 2026.11). Home Assistant only grades core
 # integrations and hassfest skips this file for custom ones; it is kept here to
-# document which rules Clawdmeter meets. Bronze and silver are complete.
+# document which rules Clawdmeter meets. Bronze, silver and gold are complete.
 rules:
   # Bronze
   action-setup:
@@ -66,15 +66,15 @@ rules:
   discovery-update-info:
     status: exempt
     comment: A cloud service account cannot be discovered.
-  docs-data-update: todo
-  docs-examples: todo
-  docs-known-limitations: todo
+  docs-data-update: done
+  docs-examples: done
+  docs-known-limitations: done
   docs-supported-devices:
     status: exempt
     comment: The integration connects to a cloud service, not to devices.
   docs-supported-functions: done
-  docs-troubleshooting: todo
-  docs-use-cases: todo
+  docs-troubleshooting: done
+  docs-use-cases: done
   dynamic-devices:
     status: exempt
     comment: Each entry is one account with exactly one service device.
