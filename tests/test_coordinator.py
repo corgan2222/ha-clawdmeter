@@ -145,7 +145,7 @@ WEEK_PACE = "sensor.claude_corgan_max_weekly_pace"
                 }
             },
             "on",
-            "30",
+            "30.0",
             "2.5",
             "10.0",
             "USD",
@@ -161,7 +161,7 @@ WEEK_PACE = "sensor.claude_corgan_max_weekly_pace"
                 }
             },
             "on",
-            "5",
+            "5.0",
             "1.0",
             "5.0",
             "USD",
@@ -181,7 +181,7 @@ WEEK_PACE = "sensor.claude_corgan_max_weekly_pace"
                 },
             },
             "on",
-            "5",
+            "5.0",
             "1.0",
             "5.0",
             "GBP",
@@ -642,7 +642,7 @@ async def test_new_install_skips_sensors_without_data(
     assert hass.states.get("sensor.claude_corgan_max_weekly_sonnet_usage") is None
     assert hass.states.get(MODEL_USAGE) is None
     # Sensors the account does fill are unaffected.
-    assert hass.states.get(SESSION_USAGE).state == "10"
+    assert hass.states.get(SESSION_USAGE).state == "10.0"
 
 
 async def test_existing_install_keeps_its_sensors(
@@ -693,7 +693,7 @@ async def test_session_window_wins_once_it_appears(
     await _push_usage(hass, aioclient_mock, mock_config_entry, 12)
 
     session = hass.states.get(SESSION_USAGE)
-    assert session.state == "12"
+    assert session.state == "12.0"
     assert session.attributes["window"] == "session"
 
 
