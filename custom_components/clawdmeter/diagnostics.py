@@ -11,6 +11,10 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import ClawdmeterClient, ClawdmeterError
 from .coordinator import ClawdmeterConfigEntry
 
+# "organization" is deliberately not redacted as a whole: the plan name and the
+# organisation type live there and both are needed to tell plans apart. The
+# identifying keys inside it (name, uuid, display_name) are redacted by key
+# anyway, recursively.
 TO_REDACT = {
     "access_token",
     "refresh_token",
@@ -26,7 +30,6 @@ TO_REDACT = {
     "id",
     "uuid",
     "account_uuid",
-    "organization",
     "organization_name",
     "organization_uuid",
 }

@@ -39,7 +39,7 @@
 # name: test_all_entities[binary_sensor][binary_sensor.claude_corgan_max_extra_usage_enabled-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'Claude Corgan (Max) Extra usage enabled',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Extra usage enabled',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.claude_corgan_max_extra_usage_enabled',
@@ -89,8 +89,8 @@
 # name: test_all_entities[binary_sensor][binary_sensor.claude_corgan_max_limit_reached_before_reset-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'problem',
-      'friendly_name': 'Claude Corgan (Max) Limit reached before reset',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'problem',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Limit reached before reset',
     }),
     'context': <ANY>,
     'entity_id': 'binary_sensor.claude_corgan_max_limit_reached_before_reset',
@@ -140,7 +140,7 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_account-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'Claude Corgan (Max) Account',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Account',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_account',
@@ -157,7 +157,7 @@
     ]),
     'area_id': None,
     'capabilities': dict({
-      'options': list([
+      <SensorEntityCapabilityAttribute.OPTIONS: 'options'>: list([
         'idle',
         'normal',
         'active',
@@ -197,9 +197,9 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_animation_group-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'enum',
-      'friendly_name': 'Claude Corgan (Max) Animation group',
-      'options': list([
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'enum',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Animation group',
+      <SensorEntityCapabilityAttribute.OPTIONS: 'options'>: list([
         'idle',
         'normal',
         'active',
@@ -221,7 +221,7 @@
     ]),
     'area_id': None,
     'capabilities': dict({
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
     }),
     'config_entry_id': <ANY>,
     'config_subentry_id': <ANY>,
@@ -259,9 +259,9 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_burn_rate_30_min-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'Claude Corgan (Max) Burn rate (30 min)',
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
-      'unit_of_measurement': '%/h',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Burn rate (30 min)',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <EntityStateAttribute.UNIT_OF_MEASUREMENT: 'unit_of_measurement'>: '%/h',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_burn_rate_30_min',
@@ -278,7 +278,7 @@
     ]),
     'area_id': None,
     'capabilities': dict({
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
     }),
     'config_entry_id': <ANY>,
     'config_subentry_id': <ANY>,
@@ -316,9 +316,9 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_burn_rate_5_min-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'Claude Corgan (Max) Burn rate (5 min)',
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
-      'unit_of_measurement': '%/h',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Burn rate (5 min)',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <EntityStateAttribute.UNIT_OF_MEASUREMENT: 'unit_of_measurement'>: '%/h',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_burn_rate_5_min',
@@ -335,7 +335,7 @@
     ]),
     'area_id': None,
     'capabilities': dict({
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
     }),
     'config_entry_id': <ANY>,
     'config_subentry_id': <ANY>,
@@ -373,9 +373,9 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_burn_rate_per_minute-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'Claude Corgan (Max) Burn rate per minute',
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
-      'unit_of_measurement': '%/min',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Burn rate per minute',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <EntityStateAttribute.UNIT_OF_MEASUREMENT: 'unit_of_measurement'>: '%/min',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_burn_rate_per_minute',
@@ -392,7 +392,7 @@
     ]),
     'area_id': None,
     'capabilities': dict({
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
     }),
     'config_entry_id': <ANY>,
     'config_subentry_id': <ANY>,
@@ -430,9 +430,9 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_extra_usage-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'Claude Corgan (Max) Extra usage',
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
-      'unit_of_measurement': '%',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Extra usage',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <EntityStateAttribute.UNIT_OF_MEASUREMENT: 'unit_of_measurement'>: '%',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_extra_usage',
@@ -449,7 +449,7 @@
     ]),
     'area_id': None,
     'capabilities': dict({
-      'state_class': <SensorStateClass.TOTAL: 'total'>,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
     }),
     'config_entry_id': <ANY>,
     'config_subentry_id': <ANY>,
@@ -487,10 +487,10 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_extra_usage_credits-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'monetary',
-      'friendly_name': 'Claude Corgan (Max) Extra usage credits',
-      'state_class': <SensorStateClass.TOTAL: 'total'>,
-      'unit_of_measurement': 'EUR',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'monetary',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Extra usage credits',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.TOTAL: 'total'>,
+      <EntityStateAttribute.UNIT_OF_MEASUREMENT: 'unit_of_measurement'>: 'EUR',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_extra_usage_credits',
@@ -543,9 +543,9 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_extra_usage_limit-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'monetary',
-      'friendly_name': 'Claude Corgan (Max) Extra usage limit',
-      'unit_of_measurement': 'EUR',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'monetary',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Extra usage limit',
+      <EntityStateAttribute.UNIT_OF_MEASUREMENT: 'unit_of_measurement'>: 'EUR',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_extra_usage_limit',
@@ -562,7 +562,7 @@
     ]),
     'area_id': None,
     'capabilities': dict({
-      'options': list([
+      <SensorEntityCapabilityAttribute.OPTIONS: 'options'>: list([
         'normal',
         'warning',
         'critical',
@@ -601,9 +601,9 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_extra_usage_status-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'enum',
-      'friendly_name': 'Claude Corgan (Max) Extra usage status',
-      'options': list([
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'enum',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Extra usage status',
+      <SensorEntityCapabilityAttribute.OPTIONS: 'options'>: list([
         'normal',
         'warning',
         'critical',
@@ -624,7 +624,7 @@
     ]),
     'area_id': None,
     'capabilities': dict({
-      'options': list([
+      <SensorEntityCapabilityAttribute.OPTIONS: 'options'>: list([
         'green',
         'orange',
         'red',
@@ -663,13 +663,14 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_pace_frame-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'enum',
-      'friendly_name': 'Claude Corgan (Max) Pace frame',
-      'options': list([
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'enum',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Pace frame',
+      <SensorEntityCapabilityAttribute.OPTIONS: 'options'>: list([
         'green',
         'orange',
         'red',
       ]),
+      'window': 'session',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_pace_frame',
@@ -719,7 +720,7 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_plan-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'Claude Corgan (Max) Plan',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Plan',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_plan',
@@ -736,7 +737,7 @@
     ]),
     'area_id': None,
     'capabilities': dict({
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
     }),
     'config_entry_id': <ANY>,
     'config_subentry_id': <ANY>,
@@ -774,9 +775,10 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_runway_margin-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'Claude Corgan (Max) Runway margin',
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
-      'unit_of_measurement': <UnitOfTime.MINUTES: 'min'>,
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Runway margin',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <EntityStateAttribute.UNIT_OF_MEASUREMENT: 'unit_of_measurement'>: <UnitOfTime.MINUTES: 'min'>,
+      'window': 'session',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_runway_margin',
@@ -793,7 +795,7 @@
     ]),
     'area_id': None,
     'capabilities': dict({
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
     }),
     'config_entry_id': <ANY>,
     'config_subentry_id': <ANY>,
@@ -831,9 +833,10 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_runway_pace-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'Claude Corgan (Max) Runway pace',
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
-      'unit_of_measurement': 'x',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Runway pace',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <EntityStateAttribute.UNIT_OF_MEASUREMENT: 'unit_of_measurement'>: 'x',
+      'window': 'session',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_runway_pace',
@@ -883,8 +886,9 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_session_limit_eta-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'timestamp',
-      'friendly_name': 'Claude Corgan (Max) Session limit ETA',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Session limit ETA',
+      'window': 'session',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_session_limit_eta',
@@ -934,8 +938,9 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_session_reset-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'timestamp',
-      'friendly_name': 'Claude Corgan (Max) Session reset',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Session reset',
+      'window': 'session',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_session_reset',
@@ -952,7 +957,7 @@
     ]),
     'area_id': None,
     'capabilities': dict({
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
     }),
     'config_entry_id': <ANY>,
     'config_subentry_id': <ANY>,
@@ -990,10 +995,11 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_session_resets_in-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'duration',
-      'friendly_name': 'Claude Corgan (Max) Session resets in',
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
-      'unit_of_measurement': <UnitOfTime.MINUTES: 'min'>,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'duration',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Session resets in',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <EntityStateAttribute.UNIT_OF_MEASUREMENT: 'unit_of_measurement'>: <UnitOfTime.MINUTES: 'min'>,
+      'window': 'session',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_session_resets_in',
@@ -1010,7 +1016,7 @@
     ]),
     'area_id': None,
     'capabilities': dict({
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
     }),
     'config_entry_id': <ANY>,
     'config_subentry_id': <ANY>,
@@ -1048,9 +1054,10 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_session_usage-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'Claude Corgan (Max) Session usage',
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
-      'unit_of_measurement': '%',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Session usage',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <EntityStateAttribute.UNIT_OF_MEASUREMENT: 'unit_of_measurement'>: '%',
+      'window': 'session',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_session_usage',
@@ -1067,7 +1074,7 @@
     ]),
     'area_id': None,
     'capabilities': dict({
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
     }),
     'config_entry_id': <ANY>,
     'config_subentry_id': <ANY>,
@@ -1105,9 +1112,10 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_session_usage_peak_today-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'Claude Corgan (Max) Session usage peak today',
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
-      'unit_of_measurement': '%',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Session usage peak today',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <EntityStateAttribute.UNIT_OF_MEASUREMENT: 'unit_of_measurement'>: '%',
+      'window': 'session',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_session_usage_peak_today',
@@ -1124,7 +1132,7 @@
     ]),
     'area_id': None,
     'capabilities': dict({
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
     }),
     'config_entry_id': <ANY>,
     'config_subentry_id': <ANY>,
@@ -1162,10 +1170,11 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_time_to_limit-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'duration',
-      'friendly_name': 'Claude Corgan (Max) Time to limit',
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
-      'unit_of_measurement': <UnitOfTime.MINUTES: 'min'>,
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'duration',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Time to limit',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <EntityStateAttribute.UNIT_OF_MEASUREMENT: 'unit_of_measurement'>: <UnitOfTime.MINUTES: 'min'>,
+      'window': 'session',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_time_to_limit',
@@ -1182,7 +1191,7 @@
     ]),
     'area_id': None,
     'capabilities': dict({
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
     }),
     'config_entry_id': <ANY>,
     'config_subentry_id': <ANY>,
@@ -1220,9 +1229,9 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_usage_rate-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'Claude Corgan (Max) Usage rate',
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
-      'unit_of_measurement': '%/min',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Usage rate',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <EntityStateAttribute.UNIT_OF_MEASUREMENT: 'unit_of_measurement'>: '%/min',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_usage_rate',
@@ -1230,6 +1239,63 @@
     'last_reported': <ANY>,
     'last_updated': <ANY>,
     'state': '0.0',
+  })
+# ---
+# name: test_all_entities[sensor][sensor.claude_corgan_max_weekly_model_usage-entry]
+  EntityRegistryEntrySnapshot({
+    'aliases': list([
+      None,
+    ]),
+    'area_id': None,
+    'capabilities': dict({
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
+    }),
+    'config_entry_id': <ANY>,
+    'config_subentry_id': <ANY>,
+    'device_class': None,
+    'device_id': <ANY>,
+    'disabled_by': None,
+    'domain': 'sensor',
+    'entity_category': <EntityCategory.DIAGNOSTIC: 'diagnostic'>,
+    'entity_id': 'sensor.claude_corgan_max_weekly_model_usage',
+    'has_entity_name': True,
+    'hidden_by': None,
+    'icon': None,
+    'id': <ANY>,
+    'labels': set({
+    }),
+    'name': None,
+    'object_id_base': 'Weekly model usage',
+    'options': dict({
+      'sensor': dict({
+        'suggested_display_precision': 0,
+      }),
+    }),
+    'original_device_class': None,
+    'original_icon': None,
+    'original_name': 'Weekly model usage',
+    'platform': 'clawdmeter',
+    'previous_unique_id': None,
+    'suggested_object_id': None,
+    'supported_features': 0,
+    'translation_key': 'model_usage',
+    'unique_id': '01JQ8R9XYZ0123456789ABCDEF_model_usage',
+    'unit_of_measurement': '%',
+  })
+# ---
+# name: test_all_entities[sensor][sensor.claude_corgan_max_weekly_model_usage-state]
+  StateSnapshot({
+    'attributes': ReadOnlyDict({
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Weekly model usage',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <EntityStateAttribute.UNIT_OF_MEASUREMENT: 'unit_of_measurement'>: '%',
+    }),
+    'context': <ANY>,
+    'entity_id': 'sensor.claude_corgan_max_weekly_model_usage',
+    'last_changed': <ANY>,
+    'last_reported': <ANY>,
+    'last_updated': <ANY>,
+    'state': 'unknown',
   })
 # ---
 # name: test_all_entities[sensor][sensor.claude_corgan_max_weekly_opus_reset-entry]
@@ -1272,8 +1338,8 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_weekly_opus_reset-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'timestamp',
-      'friendly_name': 'Claude Corgan (Max) Weekly Opus reset',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Weekly Opus reset',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_weekly_opus_reset',
@@ -1290,7 +1356,7 @@
     ]),
     'area_id': None,
     'capabilities': dict({
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
     }),
     'config_entry_id': <ANY>,
     'config_subentry_id': <ANY>,
@@ -1328,9 +1394,9 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_weekly_opus_usage-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'Claude Corgan (Max) Weekly Opus usage',
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
-      'unit_of_measurement': '%',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Weekly Opus usage',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <EntityStateAttribute.UNIT_OF_MEASUREMENT: 'unit_of_measurement'>: '%',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_weekly_opus_usage',
@@ -1347,7 +1413,7 @@
     ]),
     'area_id': None,
     'capabilities': dict({
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
     }),
     'config_entry_id': <ANY>,
     'config_subentry_id': <ANY>,
@@ -1385,9 +1451,9 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_weekly_pace-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'Claude Corgan (Max) Weekly pace',
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
-      'unit_of_measurement': '%',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Weekly pace',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <EntityStateAttribute.UNIT_OF_MEASUREMENT: 'unit_of_measurement'>: '%',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_weekly_pace',
@@ -1437,8 +1503,8 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_weekly_reset-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'timestamp',
-      'friendly_name': 'Claude Corgan (Max) Weekly reset',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Weekly reset',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_weekly_reset',
@@ -1488,8 +1554,8 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_weekly_sonnet_reset-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'device_class': 'timestamp',
-      'friendly_name': 'Claude Corgan (Max) Weekly Sonnet reset',
+      <EntityStateAttribute.DEVICE_CLASS: 'device_class'>: 'timestamp',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Weekly Sonnet reset',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_weekly_sonnet_reset',
@@ -1506,7 +1572,7 @@
     ]),
     'area_id': None,
     'capabilities': dict({
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
     }),
     'config_entry_id': <ANY>,
     'config_subentry_id': <ANY>,
@@ -1544,9 +1610,9 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_weekly_sonnet_usage-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'Claude Corgan (Max) Weekly Sonnet usage',
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
-      'unit_of_measurement': '%',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Weekly Sonnet usage',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <EntityStateAttribute.UNIT_OF_MEASUREMENT: 'unit_of_measurement'>: '%',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_weekly_sonnet_usage',
@@ -1563,7 +1629,7 @@
     ]),
     'area_id': None,
     'capabilities': dict({
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
     }),
     'config_entry_id': <ANY>,
     'config_subentry_id': <ANY>,
@@ -1601,9 +1667,9 @@
 # name: test_all_entities[sensor][sensor.claude_corgan_max_weekly_usage-state]
   StateSnapshot({
     'attributes': ReadOnlyDict({
-      'friendly_name': 'Claude Corgan (Max) Weekly usage',
-      'state_class': <SensorStateClass.MEASUREMENT: 'measurement'>,
-      'unit_of_measurement': '%',
+      <EntityStateAttribute.FRIENDLY_NAME: 'friendly_name'>: 'Claude Corgan (Max) Weekly usage',
+      <SensorEntityCapabilityAttribute.STATE_CLASS: 'state_class'>: <SensorStateClass.MEASUREMENT: 'measurement'>,
+      <EntityStateAttribute.UNIT_OF_MEASUREMENT: 'unit_of_measurement'>: '%',
     }),
     'context': <ANY>,
     'entity_id': 'sensor.claude_corgan_max_weekly_usage',

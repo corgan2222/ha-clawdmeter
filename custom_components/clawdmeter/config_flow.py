@@ -29,7 +29,9 @@ from .const import (
     CONF_EXPIRES_AT,
     CONF_PLAN,
     CONF_REFRESH_TOKEN,
+    CONF_SESSION_FALLBACK,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_SESSION_FALLBACK,
     DOMAIN,
     LOGGER,
     MAX_SCAN_INTERVAL,
@@ -173,17 +175,20 @@ class ClawdmeterConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class ClawdmeterOptionsFlow(OptionsFlow):
-    """Let the user adjust the polling interval."""
+    """Let the user adjust the polling interval and the session fallback."""
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Manage the polling interval option."""
+        """Manage the polling interval and the session fallback option."""
         if user_input is not None:
             return self.async_create_entry(data=user_input)
 
         current = self.config_entry.options.get(
             CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
+        )
+        fallback = self.config_entry.options.get(
+            CONF_SESSION_FALLBACK, DEFAULT_SESSION_FALLBACK
         )
         return self.async_show_form(
             step_id="init",
@@ -196,7 +201,11 @@ class ClawdmeterOptionsFlow(OptionsFlow):
                     vol.Required(CONF_SCAN_INTERVAL, default=current): vol.All(
                         vol.Coerce(int),
                         vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
-                    )
+                    ),
+                    # Only consulted on plans that report no session window at
+                    # all; where one exists the session entities always follow
+                    # it and this switch does nothing.
+                    vol.Required(CONF_SESSION_FALLBACK, default=fallback): bool,
                 }
             ),
         )

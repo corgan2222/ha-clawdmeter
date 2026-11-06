@@ -94,6 +94,9 @@
       "limit_eta": {
         "name": "Session limit ETA"
       },
+      "model_usage": {
+        "name": "Weekly model usage"
+      },
       "opus_reset": {
         "name": "Weekly Opus reset"
       },
@@ -156,7 +159,8 @@
     "step": {
       "init": {
         "data": {
-          "scan_interval": "Update interval (seconds)"
+          "scan_interval": "Update interval (seconds)",
+          "session_fallback": "Only follow the weekly window when the plan has no session limit"
         },
         "data_description": {
           "scan_interval": "Seconds between updates (60-3600). The default is 300."

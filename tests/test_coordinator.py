@@ -16,7 +16,11 @@ import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
-from custom_components.clawdmeter.const import MAX_FETCH_FAILURES, USAGE_ENDPOINT
+from custom_components.clawdmeter.const import (
+    CONF_SESSION_FALLBACK,
+    MAX_FETCH_FAILURES,
+    USAGE_ENDPOINT,
+)
 
 from . import setup_integration
 
@@ -32,6 +36,9 @@ LIMIT_ETA = "sensor.claude_corgan_max_session_limit_eta"
 BURN_PER_MIN = "sensor.claude_corgan_max_burn_rate_per_minute"
 SESSION_PEAK = "sensor.claude_corgan_max_session_usage_peak_today"
 RESETS_IN = "sensor.claude_corgan_max_session_resets_in"
+SESSION_USAGE = "sensor.claude_corgan_max_session_usage"
+OPUS_USAGE = "sensor.claude_corgan_max_weekly_opus_usage"
+MODEL_USAGE = "sensor.claude_corgan_max_weekly_model_usage"
 LIMIT_REACHED = "binary_sensor.claude_corgan_max_limit_reached_before_reset"
 
 
@@ -429,8 +436,12 @@ async def test_missing_session_section(
     mock_config_entry: MockConfigEntry,
     freezer: FrozenDateTimeFactory,
 ) -> None:
-    """Test a payload without the session block leaves session metrics unknown."""
+    """Test the session metrics stay unknown when the fallback is switched off."""
     freezer.move_to("2026-06-25T12:00:00+00:00")
+    mock_config_entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(
+        mock_config_entry, options={CONF_SESSION_FALLBACK: False}
+    )
     aioclient_mock.get(
         USAGE_ENDPOINT,
         json={
@@ -452,6 +463,143 @@ async def test_missing_session_section(
     # The first real session reading the same day seeds the peak.
     await _push_usage(hass, aioclient_mock, mock_config_entry, 50)
     assert float(hass.states.get(SESSION_PEAK).state) == 50.0
+
+
+async def test_session_falls_back_to_the_weekly_window(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Test an account with no session window reports the weekly one instead.
+
+    Some plans have no five-hour limit at all, so neither the legacy key nor a
+    session row ever arrives. Leaving a third of the entities empty for that
+    would be reporting a fault where there is none, so the session entities
+    follow the only window the account has and say so in their attributes.
+    """
+    freezer.move_to("2026-06-25T12:00:00+00:00")
+    aioclient_mock.get(
+        USAGE_ENDPOINT,
+        json={
+            "five_hour": None,
+            "limits": [
+                {
+                    "kind": "weekly_all",
+                    "group": "weekly",
+                    "percent": 40,
+                    "resets_at": "2026-07-01T12:00:00+00:00",
+                    "scope": None,
+                    "is_active": True,
+                }
+            ],
+        },
+    )
+    await setup_integration(hass, mock_config_entry)
+
+    session = hass.states.get(SESSION_USAGE)
+    assert session.state == "40.0"
+    assert session.attributes["window"] == "weekly"
+    # The projections inherit the weekly horizon, so they carry the same label.
+    assert hass.states.get(RESETS_IN).attributes["window"] == "weekly"
+
+
+async def test_session_window_wins_once_it_appears(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Test a real session window takes over from the weekly fallback.
+
+    The API omits the five-hour window between resets, so the fallback must not
+    latch: as soon as a session figure arrives it is the one being reported.
+    """
+    freezer.move_to("2026-06-25T12:00:00+00:00")
+    aioclient_mock.get(
+        USAGE_ENDPOINT,
+        json={
+            "seven_day": {"utilization": 40, "resets_at": "2026-07-01T12:00:00+00:00"}
+        },
+    )
+    await setup_integration(hass, mock_config_entry)
+    assert hass.states.get(SESSION_USAGE).attributes["window"] == "weekly"
+
+    await _push_usage(hass, aioclient_mock, mock_config_entry, 12)
+
+    session = hass.states.get(SESSION_USAGE)
+    assert session.state == "12"
+    assert session.attributes["window"] == "session"
+
+
+async def test_per_model_limit_comes_from_the_limits_list(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Test a scoped weekly row fills the per-model sensor and the legacy ones.
+
+    The server has stopped populating ``seven_day_opus`` / ``seven_day_sonnet``
+    and reports per-model caps as scoped rows instead. The scoped row also
+    covers models that have no legacy key at all, which is what the generic
+    sensor is for.
+    """
+    freezer.move_to("2026-06-25T12:00:00+00:00")
+    aioclient_mock.get(
+        USAGE_ENDPOINT,
+        json={
+            "five_hour": {"utilization": 5, "resets_at": "2026-06-25T15:00:00+00:00"},
+            "seven_day": {"utilization": 40, "resets_at": "2026-07-01T12:00:00+00:00"},
+            "seven_day_opus": None,
+            "seven_day_sonnet": None,
+            "limits": [
+                {
+                    "kind": "session",
+                    "group": "session",
+                    "percent": 5,
+                    "resets_at": "2026-06-25T15:00:00+00:00",
+                    "scope": None,
+                },
+                {
+                    "kind": "weekly_all",
+                    "group": "weekly",
+                    "percent": 40,
+                    "resets_at": "2026-07-01T12:00:00+00:00",
+                    "scope": None,
+                },
+                {
+                    "kind": "weekly_scoped",
+                    "group": "weekly",
+                    "percent": 62,
+                    "resets_at": "2026-07-01T12:00:00+00:00",
+                    "scope": {"model": {"id": None, "display_name": "Opus 4"}},
+                },
+                {
+                    "kind": "weekly_scoped",
+                    "group": "weekly",
+                    "percent": 9,
+                    "resets_at": "2026-07-01T12:00:00+00:00",
+                    "scope": {"model": {"id": None, "display_name": "Fable"}},
+                },
+            ],
+            "weekly_scoped_shares": [
+                {"limit_index": 2, "allowance_percent_of_weekly": 50}
+            ],
+        },
+    )
+    await setup_integration(hass, mock_config_entry)
+
+    # The legacy Opus sensor is filled from the scoped row that names it, even
+    # though the display name carries a version the match must not depend on.
+    assert hass.states.get(OPUS_USAGE).state == "62.0"
+    # The generic sensor reports whichever capped model is closest to its cap.
+    model = hass.states.get(MODEL_USAGE)
+    assert model.state == "62.0"
+    assert model.attributes["model"] == "Opus 4"
+    assert model.attributes["models"] == {"Opus 4": 62.0, "Fable": 9.0}
+    # limit_index counts the raw array, session row included.
+    assert model.attributes["allowance_percent_of_weekly"] == 50.0
 
 
 async def test_logs_when_usage_data_missing(

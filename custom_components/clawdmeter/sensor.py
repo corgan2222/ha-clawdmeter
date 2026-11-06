@@ -3,7 +3,7 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
-from typing import override
+from typing import Any, override
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -16,7 +16,16 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
-from .const import ANIMATION_GROUPS, OVERAGE_SEVERITIES, PACE_FRAMES
+from .const import (
+    ANIMATION_GROUPS,
+    ATTR_ALLOWANCE,
+    ATTR_MODEL,
+    ATTR_MODELS,
+    ATTR_RESETS_AT,
+    ATTR_WINDOW,
+    OVERAGE_SEVERITIES,
+    PACE_FRAMES,
+)
 from .coordinator import (
     ClawdmeterConfigEntry,
     ClawdmeterData,
@@ -37,6 +46,31 @@ class ClawdmeterSensorEntityDescription(SensorEntityDescription):
 
     value_fn: Callable[[ClawdmeterData], StateType | datetime]
     unit_fn: Callable[[ClawdmeterData], str | None] | None = None
+    attrs_fn: Callable[[ClawdmeterData], dict[str, Any] | None] | None = None
+
+
+def _window_attrs(data: ClawdmeterData) -> dict[str, Any] | None:
+    """Name the window a session-derived entity is really reporting.
+
+    Everything downstream of the session figure inherits its horizon, so each
+    of those entities says so rather than leaving the reader to guess whether
+    a five-hour or a weekly number is on screen.
+    """
+    if not data.session_window:
+        return None
+    return {ATTR_WINDOW: data.session_window}
+
+
+def _model_attrs(data: ClawdmeterData) -> dict[str, Any] | None:
+    """Describe the per-model weekly cap behind the headline percentage."""
+    if data.model_name is None:
+        return None
+    return {
+        ATTR_MODEL: data.model_name,
+        ATTR_RESETS_AT: data.model_reset,
+        ATTR_ALLOWANCE: data.model_allowance,
+        ATTR_MODELS: data.model_usages,
+    }
 
 
 # Sensors carrying a raw value straight from the usage/profile API are filed as
@@ -50,6 +84,7 @@ SENSORS: tuple[ClawdmeterSensorEntityDescription, ...] = (
         suggested_display_precision=0,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data.session_usage,
+        attrs_fn=_window_attrs,
     ),
     ClawdmeterSensorEntityDescription(
         key="session_reset",
@@ -57,6 +92,7 @@ SENSORS: tuple[ClawdmeterSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data.session_reset,
+        attrs_fn=_window_attrs,
     ),
     ClawdmeterSensorEntityDescription(
         key="week_usage",
@@ -168,6 +204,7 @@ SENSORS: tuple[ClawdmeterSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=0,
         value_fn=lambda data: data.session_reset_in,
+        attrs_fn=_window_attrs,
     ),
     ClawdmeterSensorEntityDescription(
         key="session_peak_today",
@@ -176,6 +213,7 @@ SENSORS: tuple[ClawdmeterSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=0,
         value_fn=lambda data: data.session_peak_today,
+        attrs_fn=_window_attrs,
     ),
     ClawdmeterSensorEntityDescription(
         key="week_pace",
@@ -225,12 +263,14 @@ SENSORS: tuple[ClawdmeterSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=0,
         value_fn=lambda data: data.time_to_limit,
+        attrs_fn=_window_attrs,
     ),
     ClawdmeterSensorEntityDescription(
         key="limit_eta",
         translation_key="limit_eta",
         device_class=SensorDeviceClass.TIMESTAMP,
         value_fn=lambda data: data.limit_eta,
+        attrs_fn=_window_attrs,
     ),
     ClawdmeterSensorEntityDescription(
         key="runway_pace",
@@ -239,6 +279,7 @@ SENSORS: tuple[ClawdmeterSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=2,
         value_fn=lambda data: data.runway_pace,
+        attrs_fn=_window_attrs,
     ),
     ClawdmeterSensorEntityDescription(
         key="runway_margin",
@@ -247,6 +288,7 @@ SENSORS: tuple[ClawdmeterSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=0,
         value_fn=lambda data: data.runway_margin,
+        attrs_fn=_window_attrs,
     ),
     ClawdmeterSensorEntityDescription(
         key="animation_group",
@@ -256,11 +298,22 @@ SENSORS: tuple[ClawdmeterSensorEntityDescription, ...] = (
         value_fn=lambda data: data.animation_group,
     ),
     ClawdmeterSensorEntityDescription(
+        key="model_usage",
+        translation_key="model_usage",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data.model_usage,
+        attrs_fn=_model_attrs,
+    ),
+    ClawdmeterSensorEntityDescription(
         key="pace_frame",
         translation_key="pace_frame",
         device_class=SensorDeviceClass.ENUM,
         options=PACE_FRAMES,
         value_fn=lambda data: data.pace_frame,
+        attrs_fn=_window_attrs,
     ),
 )
 
@@ -297,6 +350,14 @@ class ClawdmeterSensor(ClawdmeterEntity, SensorEntity):
     def native_value(self) -> StateType | datetime:
         """Return the current value for this sensor."""
         return self.entity_description.value_fn(self.coordinator.data)
+
+    @property
+    @override
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return the description's extra attributes, if it defines any."""
+        if self.entity_description.attrs_fn is None:
+            return None
+        return self.entity_description.attrs_fn(self.coordinator.data)
 
     @property
     @override

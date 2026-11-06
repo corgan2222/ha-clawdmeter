@@ -21,6 +21,7 @@ from .const import (
     OAUTH_REDIRECT_URI,
     OAUTH_SCOPES,
     OAUTH_TOKEN_URL,
+    ORGANIZATION_PLANS,
     PROFILE_ENDPOINT,
     REQUEST_TIMEOUT,
     USAGE_ENDPOINT,
@@ -102,6 +103,39 @@ class AccountInfo:
     name: str | None
     email: str | None
     plan: str | None
+
+
+def plan_from_profile(body: dict[str, Any]) -> str | None:
+    """Work out the plan name from a profile response.
+
+    The organisation's own display name comes first because it is the only
+    source that separates plans the account flags cannot: a plan that replaced
+    an older tier keeps reporting ``has_claude_max``, so the flags alone would
+    show the superseded name forever. Team and Enterprise seats set no flag at
+    all and are only visible as an organisation type.
+    """
+    organization = body.get("organization")
+    if not isinstance(organization, dict):
+        organization = {}
+
+    display = organization.get("plan_display_name")
+    if isinstance(display, str) and display.strip():
+        return display.strip()
+
+    account = body.get("account") or {}
+    if account.get("has_claude_max"):
+        return "Max"
+    if account.get("has_claude_pro"):
+        return "Pro"
+
+    org_type = organization.get("organization_type")
+    if not isinstance(org_type, str) or not org_type:
+        return None
+    # An unrecognised type is still worth showing: claude_foo_bar -> "Foo Bar"
+    # beats a blank sensor, and it is self-evidently a plan name.
+    return ORGANIZATION_PLANS.get(
+        org_type, org_type.removeprefix("claude_").replace("_", " ").title()
+    )
 
 
 class ClawdmeterClient:
@@ -192,15 +226,10 @@ class ClawdmeterClient:
         body = await self._async_get(PROFILE_ENDPOINT, access_token)
         account = body.get("account", {})
         email = account.get("email")
-        plan = None
-        if account.get("has_claude_max"):
-            plan = "Max"
-        elif account.get("has_claude_pro"):
-            plan = "Pro"
         return AccountInfo(
             name=account.get("display_name") or account.get("full_name") or email,
             email=email,
-            plan=plan,
+            plan=plan_from_profile(body),
         )
 
     async def async_get_usage(self, access_token: str) -> dict[str, Any]:
