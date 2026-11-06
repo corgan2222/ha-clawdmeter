@@ -12,7 +12,7 @@ from homeassistant.config_entries import (
 from homeassistant.const import CONF_ACCESS_TOKEN, CONF_SCAN_INTERVAL
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-import voluptuous as vol
+import probatio
 
 from .api import (
     AccountInfo,
@@ -43,7 +43,7 @@ STEP_USER = "user"
 STEP_REAUTH = "reauth_confirm"
 STEP_RECONFIGURE = "reconfigure"
 
-DATA_SCHEMA = vol.Schema({vol.Required(CONF_AUTH_CODE): str})
+DATA_SCHEMA = probatio.Schema({probatio.Required(CONF_AUTH_CODE): str})
 
 
 class ClawdmeterConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -201,20 +201,22 @@ class ClawdmeterOptionsFlow(OptionsFlow):
         )
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema(
+            data_schema=probatio.Schema(
                 {
                     # A user-configurable poll interval is intentional here (an
                     # explicit feature request); the default stays conservative
                     # because the usage API is rate limited.
                     # pylint: disable-next=home-assistant-config-flow-polling-field
-                    vol.Required(CONF_SCAN_INTERVAL, default=current): vol.All(
-                        vol.Coerce(int),
-                        vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
+                    probatio.Required(
+                        CONF_SCAN_INTERVAL, default=current
+                    ): probatio.All(
+                        probatio.Coerce(int),
+                        probatio.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
                     ),
                     # Only consulted on plans that report no session window at
                     # all; where one exists the session entities always follow
                     # it and this switch does nothing.
-                    vol.Required(CONF_SESSION_FALLBACK, default=fallback): bool,
+                    probatio.Required(CONF_SESSION_FALLBACK, default=fallback): bool,
                 }
             ),
         )
