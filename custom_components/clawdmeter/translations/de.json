@@ -192,5 +192,13 @@
         }
       }
     }
+  },
+  "exceptions": {
+    "auth_failed": {
+      "message": "Das Claude-Konto hat die gespeicherte Anmeldung abgelehnt. Authentifiziere die Integration neu, um fortzufahren."
+    },
+    "update_failed": {
+      "message": "Die Nutzungsdaten konnten nicht von Anthropic abgerufen werden: {error}"
+    }
   }
 }
