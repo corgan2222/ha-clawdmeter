@@ -39,6 +39,9 @@
       "limit_eta": {
         "default": "mdi:clock-alert-outline"
       },
+      "model_usage": {
+        "default": "mdi:calendar-week-begin"
+      },
       "opus_reset": {
         "default": "mdi:calendar-refresh"
       },

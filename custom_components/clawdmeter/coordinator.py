@@ -341,7 +341,7 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
             if not self._logged_empty:
                 LOGGER.warning(
                     "Usage API returned no session or weekly data (keys: %s); those "
-                    "entities stay unavailable. This is normal if you have not used "
+                    "entities stay unknown. This is normal if you have not used "
                     "Claude in these windows, but if it persists the poll interval may "
                     "be too low and the rate-limited API may be throttling you",
                     sorted(raw),

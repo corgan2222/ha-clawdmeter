@@ -34,6 +34,16 @@ TO_REDACT = {
     "organization_uuid",
 }
 
+# The usage response describes limits, not people. Its display_name and id keys
+# name the capped model ("Fable"), which is exactly what a diagnostics dump of a
+# plan problem needs, so only keys that could identify an account are removed.
+USAGE_TO_REDACT = {
+    "email",
+    "uuid",
+    "account_uuid",
+    "organization_uuid",
+}
+
 
 async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: ClawdmeterConfigEntry
@@ -55,15 +65,19 @@ async def async_get_config_entry_diagnostics(
     except ClawdmeterError as err:
         raw_profile = {"error": str(err)}
 
-    return async_redact_data(
-        {
-            "config_entry": {
-                "data": dict(entry.data),
-                "options": dict(entry.options),
+    return {
+        **async_redact_data(
+            {
+                "config_entry": {
+                    "data": dict(entry.data),
+                    "options": dict(entry.options),
+                },
+                "stored": asdict(coordinator.data),
+                "raw_profile_api": raw_profile,
             },
-            "stored": asdict(coordinator.data),
-            "raw_usage_api": coordinator.raw_usage or {},
-            "raw_profile_api": raw_profile,
-        },
-        TO_REDACT,
-    )
+            TO_REDACT,
+        ),
+        "raw_usage_api": async_redact_data(
+            coordinator.raw_usage or {}, USAGE_TO_REDACT
+        ),
+    }
