@@ -24,6 +24,7 @@ from .const import (
     ORGANIZATION_PLANS,
     PROFILE_ENDPOINT,
     REQUEST_TIMEOUT,
+    TOKEN_REJECTED_STATUSES,
     USAGE_ENDPOINT,
 )
 
@@ -219,8 +220,15 @@ class ClawdmeterClient:
                 timeout=ClientTimeout(total=REQUEST_TIMEOUT),
             )
         )
-        if response.status >= 400:
+        # Only a refused grant means the stored credentials are gone. A rate
+        # limit or a server error says nothing about them, and treating it as
+        # one would send the user through a reauth for a passing outage.
+        if response.status in TOKEN_REJECTED_STATUSES:
             raise ClawdmeterAuthError(f"Token endpoint returned {response.status}")
+        if response.status >= 400:
+            raise ClawdmeterConnectionError(
+                f"Token endpoint returned {response.status}"
+            )
         try:
             body = await response.json()
         except ClientError as err:

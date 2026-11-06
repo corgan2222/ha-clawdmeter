@@ -39,6 +39,8 @@ REQUEST_TIMEOUT: Final = 15
 # against the endpoint's aggressive rate limit; HTTP error statuses are never
 # retried. The tuple length is the number of extra attempts; () disables retry.
 CONNECT_RETRY_DELAYS: Final = (2.0, 5.0)
+# Token endpoint statuses that mean the grant itself was refused.
+TOKEN_REJECTED_STATUSES: Final = frozenset({400, 401, 403})
 # Refresh the access token this many seconds before it actually expires.
 TOKEN_EXPIRY_MARGIN: Final = 60
 
