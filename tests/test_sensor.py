@@ -26,7 +26,7 @@ PLAN = "sensor.claude_corgan_max_plan"
 USAGE_RATE = "sensor.claude_corgan_max_usage_rate"
 
 
-@pytest.mark.usefixtures("mock_usage")
+@pytest.mark.usefixtures("mock_usage", "entity_registry_enabled_by_default")
 @pytest.mark.parametrize("platform", [Platform.SENSOR, Platform.BINARY_SENSOR])
 async def test_all_entities(
     hass: HomeAssistant,
@@ -47,6 +47,26 @@ async def test_all_entities(
         await setup_integration(hass, mock_config_entry)
 
     await snapshot_platform(hass, entity_registry, snapshot, mock_config_entry.entry_id)
+
+
+@pytest.mark.usefixtures("mock_usage")
+async def test_extra_usage_amounts_start_disabled(
+    hass: HomeAssistant,
+    entity_registry: er.EntityRegistry,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """Test the extra usage amounts are created disabled on a new install."""
+    await setup_integration(hass, mock_config_entry)
+
+    for entity_id in (
+        "sensor.claude_corgan_max_extra_usage_credits",
+        "sensor.claude_corgan_max_extra_usage_limit",
+    ):
+        entry = entity_registry.async_get(entity_id)
+        assert entry.disabled_by is er.RegistryEntryDisabler.INTEGRATION
+        assert hass.states.get(entity_id) is None
+    # The percentage stays on.
+    assert hass.states.get("sensor.claude_corgan_max_extra_usage") is not None
 
 
 @pytest.mark.usefixtures("mock_usage")

@@ -167,6 +167,9 @@ SENSORS: tuple[ClawdmeterSensorEntityDescription, ...] = (
     ClawdmeterSensorEntityDescription(
         key="extra_credits",
         translation_key="extra_credits",
+        # Extra usage already reports its percentage; the amounts behind it are
+        # rarely wanted, so a new install starts with them off.
+        entity_registry_enabled_default=False,
         device_class=SensorDeviceClass.MONETARY,
         state_class=SensorStateClass.TOTAL,
         suggested_display_precision=2,
@@ -177,6 +180,7 @@ SENSORS: tuple[ClawdmeterSensorEntityDescription, ...] = (
     ClawdmeterSensorEntityDescription(
         key="extra_limit",
         translation_key="extra_limit",
+        entity_registry_enabled_default=False,
         device_class=SensorDeviceClass.MONETARY,
         suggested_display_precision=2,
         entity_category=EntityCategory.DIAGNOSTIC,
