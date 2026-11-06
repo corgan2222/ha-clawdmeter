@@ -608,13 +608,20 @@ async def test_title_follows_only_when_generated(
 
 
 @pytest.mark.account_refresh
+@pytest.mark.parametrize(
+    "failure", [{"status": 500}, {"exc": TimeoutError()}], ids=["status", "timeout"]
+)
 async def test_plan_survives_a_failed_profile_lookup(
     hass: HomeAssistant,
     aioclient_mock: AiohttpClientMocker,
     mock_config_entry: MockConfigEntry,
+    failure: dict[str, Any],
 ) -> None:
-    """Test a profile lookup that fails leaves the stored plan and setup alone."""
-    aioclient_mock.get(PROFILE_ENDPOINT, status=500)
+    """Test a profile lookup that fails leaves the stored plan and setup alone.
+
+    A timeout used to escape as a bare TimeoutError and fail the whole setup.
+    """
+    aioclient_mock.get(PROFILE_ENDPOINT, **failure)
     aioclient_mock.get(USAGE_ENDPOINT, json=_session_payload(10))
     await setup_integration(hass, mock_config_entry)
 

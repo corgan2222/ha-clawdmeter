@@ -152,7 +152,9 @@ class ClawdmeterClient:
 
         A failed connection never reaches the server, so retrying it cannot trip
         the endpoint's aggressive rate limit. HTTP error statuses are inspected
-        by the caller and are never retried here.
+        by the caller and are never retried here, and neither is a timeout: the
+        request may have reached the server, so it is reported as a connection
+        failure instead of escaping as a bare TimeoutError.
         """
         for attempt, delay in enumerate(CONNECT_RETRY_DELAYS, start=1):
             try:
@@ -165,10 +167,14 @@ class ClawdmeterClient:
                     err,
                 )
                 await asyncio.sleep(delay)
+            except TimeoutError as err:
+                raise ClawdmeterConnectionError("Request timed out") from err
         try:
             return await send()
         except ClientError as err:
             raise ClawdmeterConnectionError(str(err)) from err
+        except TimeoutError as err:
+            raise ClawdmeterConnectionError("Request timed out") from err
 
     async def async_exchange_code(
         self, code: str, challenge: OAuthChallenge, returned_state: str
