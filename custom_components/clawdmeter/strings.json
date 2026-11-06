@@ -162,12 +162,13 @@
       "init": {
         "data": {
           "scan_interval": "Update interval (seconds)",
-          "session_fallback": "Only follow the weekly window when the plan has no session limit"
+          "session_fallback": "Weekly window for plans without a session limit"
         },
         "data_description": {
-          "scan_interval": "Seconds between updates (60-3600). The default is 300."
+          "scan_interval": "Seconds between updates (60-3600). The default is 300.",
+          "session_fallback": "On plans without a five-hour limit, such as Ultra, the session sensors and projections follow the weekly limit instead of staying empty. Plans with a five-hour limit are not affected."
         },
-        "description": "How often to poll the Claude usage API. The API is rate limited, so keep this reasonably high.",
+        "description": "How often to poll the Claude usage API, and how plans without a session limit are shown. The API is rate limited, so keep the interval reasonably high.",
         "title": "Clawdmeter options"
       }
     }

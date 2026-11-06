@@ -911,6 +911,31 @@ async def test_reset_drop_threshold_boundary(
     )
 
 
+async def test_short_outage_logs_its_end(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+    freezer: FrozenDateTimeFactory,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test an outage that ends within the tolerance logs its end once."""
+    freezer.move_to("2026-06-25T12:00:00+00:00")
+    aioclient_mock.get(USAGE_ENDPOINT, json=_session_payload(20))
+    await setup_integration(hass, mock_config_entry)
+
+    caplog.set_level(logging.INFO)
+    for _ in range(2):
+        freezer.tick(timedelta(minutes=5))
+        await _push_error(hass, aioclient_mock, mock_config_entry, status=500)
+    freezer.tick(timedelta(minutes=5))
+    await _push_usage(hass, aioclient_mock, mock_config_entry, 25)
+    freezer.tick(timedelta(minutes=5))
+    await _push_usage(hass, aioclient_mock, mock_config_entry, 26)
+
+    assert caplog.text.count("keeping the last known values") == 1
+    assert caplog.text.count("reachable again") == 1
+
+
 @pytest.mark.parametrize(
     "error_kwargs",
     [{"exc": ClientError()}, {"status": 500}],
@@ -939,6 +964,9 @@ async def test_transient_error_keeps_last_values(
         assert float(hass.states.get(SESSION_USAGE).state) == 20.0
         assert mock_config_entry.runtime_data.last_update_success is True
     assert "keeping the last known values" in caplog.text
+
+    # The outage is logged once, not on every poll.
+    assert caplog.text.count("keeping the last known values") == 1
 
     # One more straight failure exceeds the tolerance, so entities go stale.
     freezer.tick(timedelta(minutes=5))

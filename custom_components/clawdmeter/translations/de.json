@@ -50,12 +50,13 @@
       "init": {
         "data": {
           "scan_interval": "Aktualisierungsintervall (Sekunden)",
-          "session_fallback": "Nur bei Tarifen ohne Session-Limit dem Wochenfenster folgen"
+          "session_fallback": "Wochenfenster bei Tarifen ohne Session-Limit"
         },
         "data_description": {
-          "scan_interval": "Sekunden zwischen Aktualisierungen (60-3600). Der Standard ist 300."
+          "scan_interval": "Sekunden zwischen Aktualisierungen (60-3600). Der Standard ist 300.",
+          "session_fallback": "Bei Tarifen ohne 5-Stunden-Limit, etwa Ultra, folgen die Session-Sensoren und Prognosen dem Wochenlimit, statt leer zu bleiben. Tarife mit 5-Stunden-Limit sind davon nicht betroffen."
         },
-        "description": "Wie oft die Claude-Nutzungs-API abgefragt wird. Die API ist ratenbegrenzt, halte den Wert daher ausreichend hoch.",
+        "description": "Wie oft die Claude-Nutzungs-API abgefragt wird und wie Tarife ohne Session-Limit angezeigt werden. Die API ist ratenbegrenzt, halte das Intervall daher ausreichend hoch.",
         "title": "Clawdmeter-Optionen"
       }
     }

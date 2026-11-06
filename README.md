@@ -8,6 +8,7 @@
 
 <p align="center">
   <a href="https://www.home-assistant.io"><img alt="Home Assistant 2026.11 or newer" src="https://img.shields.io/badge/Home%20Assistant-2026.11%2B-41BDF5.svg"></a>
+  <a href="custom_components/clawdmeter/quality_scale.yaml"><img alt="Quality scale: silver, self-assessed" src="https://img.shields.io/badge/quality%20scale-silver%20(self--assessed)-C0C0C0.svg"></a>
   <img alt="Home Assistant" src="https://img.shields.io/badge/Home%20Assistant-integration-1c8edb.svg">
   <img alt="i18n" src="https://img.shields.io/badge/i18n-EN%20%2F%20DE-success.svg">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-green.svg">
@@ -149,8 +150,23 @@ Clawdmeter authenticates with Anthropic over OAuth — there is no API key to ma
    whole thing).
 3. Paste it back and you are done. Add more accounts by repeating with a different login.
 
-Tune how often it polls under the integration's **Configure** button (60–3600 s, default
-300). The usage API is rate limited, so keep it sensible.
+Two options sit under the integration's **Configure** button:
+
+| Option | Default | What it does |
+| --- | --- | --- |
+| Update interval | 300 s | How often the usage API is polled, 60 to 3600 s. The API is rate limited, so keep it sensible. |
+| Weekly window for plans without a session limit | on | On plans without a five-hour limit, such as Ultra, the session sensors and projections follow the weekly limit instead of staying empty. Plans with a five-hour limit are not affected. |
+
+To sign in again or switch to another account, use **Reconfigure** in the entry's ⋮ menu.
+
+## 🗑️ Removal
+
+1. Go to **Settings → Devices & services → Clawdmeter**, open the entry's ⋮ menu and
+   choose **Delete**. This removes the account, its entities and the stored burn-rate
+   history.
+2. To remove the code as well, uninstall **Clawdmeter** in the Marketplace (or delete
+   `config/custom_components/clawdmeter` after a manual install) and restart Home
+   Assistant.
 
 ## 🔍 Diagnostics
 

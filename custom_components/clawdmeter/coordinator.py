@@ -307,6 +307,9 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
             raise ConfigEntryAuthFailed(str(err)) from err
         except ClawdmeterConnectionError as err:
             return self._handle_fetch_failure(err)
+        if 0 < self._fetch_failures <= MAX_FETCH_FAILURES:
+            # Past the tolerance the coordinator reports the recovery itself.
+            LOGGER.info("The usage API is reachable again")
         self._fetch_failures = 0
         LOGGER.debug("Fetched usage payload: %s", raw)
         self.raw_usage = raw
@@ -321,17 +324,24 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
         A handful of consecutive connection failures keep the previous data so a
         short API/network blip does not flip every entity to "unavailable"; once
         they persist past MAX_FETCH_FAILURES the error surfaces and entities go
-        unavailable as usual.
+        unavailable as usual. The outage is logged once, not on every poll.
         """
         self._fetch_failures += 1
         if self.data is not None and self._fetch_failures <= MAX_FETCH_FAILURES:
-            LOGGER.warning(
-                "Error fetching clawdmeter data (%s/%s), keeping the last known "
-                "values: %s",
-                self._fetch_failures,
-                MAX_FETCH_FAILURES,
-                err,
-            )
+            if self._fetch_failures == 1:
+                LOGGER.warning(
+                    "Error fetching clawdmeter data, keeping the last known values "
+                    "for up to %s polls: %s",
+                    MAX_FETCH_FAILURES,
+                    err,
+                )
+            else:
+                LOGGER.debug(
+                    "Still failing (%s/%s): %s",
+                    self._fetch_failures,
+                    MAX_FETCH_FAILURES,
+                    err,
+                )
             return self.data
         raise UpdateFailed(str(err)) from err
 

@@ -1,0 +1,96 @@
+# Self-assessment against the Home Assistant integration quality scale
+# (rules as of Home Assistant 2026.11). Home Assistant only grades core
+# integrations and hassfest skips this file for custom ones; it is kept here to
+# document which rules Clawdmeter meets. Bronze and silver are complete.
+rules:
+  # Bronze
+  action-setup:
+    status: exempt
+    comment: The integration registers no actions.
+  appropriate-polling:
+    status: done
+    comment: |
+      Polls every 300 s by default. The interval is configurable on purpose
+      (60 to 3600 s), because the usage API's rate limit differs per account.
+  brands: done
+  common-modules: done
+  config-flow: done
+  config-flow-test-coverage: done
+  dependency-transparency: done
+  docs-actions:
+    status: exempt
+    comment: The integration registers no actions.
+  docs-conditions:
+    status: exempt
+    comment: The integration provides no conditions.
+  docs-high-level-description: done
+  docs-installation-instructions: done
+  docs-removal-instructions: done
+  docs-triggers:
+    status: exempt
+    comment: The integration provides no triggers.
+  entity-event-setup:
+    status: exempt
+    comment: Entities only read coordinator data and subscribe to no events.
+  entity-unique-id: done
+  has-entity-name: done
+  runtime-data: done
+  test-before-configure: done
+  test-before-setup: done
+  unique-config-entry: done
+
+  # Silver
+  action-exceptions:
+    status: exempt
+    comment: The integration registers no actions.
+  config-entry-unloading: done
+  docs-configuration-parameters: done
+  docs-installation-parameters: done
+  entity-unavailable:
+    status: done
+    comment: |
+      A short outage keeps the last values for up to six polls, after that
+      the entities become unavailable.
+  integration-owner: done
+  log-when-unavailable: done
+  parallel-updates: done
+  reauthentication-flow: done
+  test-coverage: done
+
+  # Gold
+  devices: done
+  diagnostics: done
+  discovery:
+    status: exempt
+    comment: A cloud service account cannot be discovered.
+  discovery-update-info:
+    status: exempt
+    comment: A cloud service account cannot be discovered.
+  docs-data-update: todo
+  docs-examples: todo
+  docs-known-limitations: todo
+  docs-supported-devices:
+    status: exempt
+    comment: The integration connects to a cloud service, not to devices.
+  docs-supported-functions: done
+  docs-troubleshooting: todo
+  docs-use-cases: todo
+  dynamic-devices:
+    status: exempt
+    comment: Each entry is one account with exactly one service device.
+  entity-category: done
+  entity-device-class: done
+  entity-disabled-by-default: todo
+  entity-translations: done
+  exception-translations: todo
+  icon-translations: done
+  reconfiguration-flow: done
+  repair-issues: done
+  stale-devices:
+    status: exempt
+    comment: Each entry is one account with exactly one service device.
+
+  # Platinum
+  async-dependency: done
+  inject-websession: done
+  strict-typing: todo
