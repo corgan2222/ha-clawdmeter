@@ -3,7 +3,7 @@ target-version = "py314"
 line-length = 88
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "UP", "B", "C4", "RUF"]
+select = ["E", "F", "W", "I", "UP", "B", "BLE", "C4", "RUF"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["custom_components"]

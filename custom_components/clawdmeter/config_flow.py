@@ -103,7 +103,7 @@ class ClawdmeterConfigFlow(ConfigFlow, domain=DOMAIN):
                     errors["base"] = "exchange_failed"
                 except ClawdmeterConnectionError:
                     errors["base"] = "cannot_connect"
-                except Exception:
+                except Exception:  # noqa: BLE001
                     LOGGER.exception("Unexpected error while authorizing")
                     errors["base"] = "unknown"
                 else:
