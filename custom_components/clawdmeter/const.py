@@ -73,6 +73,15 @@ ATTR_RESETS_AT: Final = "resets_at"
 ATTR_ALLOWANCE: Final = "allowance_percent_of_weekly"
 ATTR_MODELS: Final = "models"
 
+# Attributes on the weekly usage by surface sensor. Its state is the share of
+# this surface key.
+ATTR_SURFACES: Final = "surfaces"
+ATTR_WINDOW_STARTED_AT: Final = "window_started_at"
+SURFACE_CLAUDE_CODE: Final = "claude_code"
+# Surface keys with their own entity name. Any other key the API reports still
+# gets an entity, named from the key itself.
+KNOWN_SURFACES: Final = (SURFACE_CLAUDE_CODE, "chat", "cowork", "other")
+
 # Plan names the profile endpoint reports as an organization type.
 ORGANIZATION_PLANS: Final = {
     "claude_max": "Max",

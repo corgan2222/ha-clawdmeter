@@ -17,6 +17,9 @@ Three properties of that array drive the design here:
 * ``weekly_scoped_shares[].limit_index`` indexes the **raw** array, including
   rows this module does not understand. Indices are therefore resolved before
   any filtering, which is why :attr:`LimitRow.index` exists.
+
+The ``seven_day_breakdown`` object, which splits the week's usage by surface,
+is parsed here too: it is the same foreign JSON and needs the same care.
 """
 
 from dataclasses import dataclass
@@ -152,6 +155,42 @@ def scoped(rows: list[LimitRow]) -> list[LimitRow]:
 def scoped_for(rows: list[LimitRow], slug: str) -> LimitRow | None:
     """Return the scoped row whose model or surface matches ``slug``."""
     return next((row for row in scoped(rows) if row.slug == slug), None)
+
+
+@dataclass(frozen=True, slots=True)
+class Breakdown:
+    """The week's usage split by surface, as shares that add up to 100."""
+
+    shares: dict[str, float]
+    window_started_at: datetime | None
+
+
+def parse_breakdown(raw: Any) -> Breakdown | None:
+    """Return ``seven_day_breakdown`` as a surface key to share map.
+
+    ``key`` is an open string like ``kind`` above (``other`` is already a
+    catch-all), so every key is passed along as it is. Rows without a key or a
+    numeric ``percent`` are dropped. ``None`` means the account reported no
+    usable breakdown at all.
+    """
+    if not isinstance(raw, dict):
+        return None
+    rows = raw.get("rows")
+    if not isinstance(rows, list):
+        return None
+    shares: dict[str, float] = {}
+    for item in rows:
+        if not isinstance(item, dict):
+            continue
+        key = item.get("key")
+        percent = as_float(item.get("percent"))
+        if isinstance(key, str) and key and percent is not None:
+            shares[key] = percent
+    if not shares:
+        return None
+    return Breakdown(
+        shares=shares, window_started_at=as_datetime(raw.get("window_started_at"))
+    )
 
 
 def allowances(raw: Any, rows: list[LimitRow]) -> dict[int, float]:

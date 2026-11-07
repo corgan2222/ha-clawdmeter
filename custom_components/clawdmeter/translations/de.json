@@ -156,6 +156,24 @@
       "sonnet_usage": {
         "name": "Wöchentliche Sonnet-Nutzung"
       },
+      "surface_share": {
+        "name": "Wochenanteil {surface}"
+      },
+      "surface_share_chat": {
+        "name": "Wochenanteil Chat"
+      },
+      "surface_share_claude_code": {
+        "name": "Wochenanteil Claude Code"
+      },
+      "surface_share_cowork": {
+        "name": "Wochenanteil Cowork"
+      },
+      "surface_share_other": {
+        "name": "Wochenanteil Sonstiges"
+      },
+      "surface_usage": {
+        "name": "Wöchentliche Nutzung nach Oberfläche"
+      },
       "time_to_limit": {
         "name": "Zeit bis zum Limit"
       },

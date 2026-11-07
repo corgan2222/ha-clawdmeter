@@ -109,12 +109,21 @@ readings sit under **Diagnostic**.
 | --- | --- |
 | Account | Account · Plan |
 | Usage | Session usage · Weekly usage · Weekly model usage · Weekly Sonnet usage · Weekly Opus usage |
+| Usage by surface | Weekly usage by surface · Weekly Claude Code share · Weekly chat share · Weekly Cowork share · Weekly other share |
 | Resets | Session reset · Weekly reset · Weekly Sonnet reset · Weekly Opus reset |
+| Overage | Extra usage · Extra usage status · Extra usage credits · Extra usage limit · Extra usage enabled |
 
 The Sonnet and Opus sensors only exist for accounts that report a weekly cap for that model.
 Weekly model usage covers whichever model is capped, and lists all of them in its `models`
 attribute.
-| Overage | Extra usage · Extra usage status · Extra usage credits · Extra usage limit · Extra usage enabled |
+
+Weekly usage by surface shows where this week's usage came from: Claude Code, chat, Cowork
+and so on. Its values are **shares of the week's usage** that add up to 100, not percentages
+of a limit. The state is the Claude Code share, and the `surfaces` attribute lists every
+surface, for example `{"claude_code": 40, "chat": 0, "cowork": 60, "other": 0}`. Each
+surface also gets a share sensor of its own, so it has a history and long-term statistics.
+A surface the API adds later gets its share sensor automatically. These sensors only exist
+for accounts whose usage response includes this split.
 
 ## 💤 States when Claude is idle
 

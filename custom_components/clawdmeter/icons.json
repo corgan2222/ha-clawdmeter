@@ -78,6 +78,24 @@
       "sonnet_usage": {
         "default": "mdi:calendar-week-begin"
       },
+      "surface_share": {
+        "default": "mdi:chart-pie"
+      },
+      "surface_share_chat": {
+        "default": "mdi:chat-outline"
+      },
+      "surface_share_claude_code": {
+        "default": "mdi:console"
+      },
+      "surface_share_cowork": {
+        "default": "mdi:briefcase-outline"
+      },
+      "surface_share_other": {
+        "default": "mdi:dots-horizontal-circle-outline"
+      },
+      "surface_usage": {
+        "default": "mdi:chart-pie"
+      },
       "time_to_limit": {
         "default": "mdi:timer-alert-outline"
       },
