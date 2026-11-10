@@ -329,6 +329,10 @@ severity:
 - [trickv/hass-claude-usage](https://github.com/trickv/hass-claude-usage) — the reference integration this build reworks.
 - [esphome-modular-lvgl-buttons](https://github.com/corgan2222/esphome-modular-lvgl-buttons) — the ESPHome Clawdmeter display.
 
+## 🧩 Projects using Clawdmeter
+
+- [leftover-salmon/home-assistant-claude-fleet](https://github.com/leftover-salmon/home-assistant-claude-fleet) — tracks many concurrent Claude Code sessions on a Home Assistant dashboard over MQTT, with Clawdmeter as its plan usage source.
+
 ## 📄 License
 
 Released under the MIT License.
