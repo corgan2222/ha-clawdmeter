@@ -140,6 +140,24 @@
       "sonnet_usage": {
         "name": "Weekly Sonnet usage"
       },
+      "surface_share": {
+        "name": "Weekly {surface} share"
+      },
+      "surface_share_chat": {
+        "name": "Weekly chat share"
+      },
+      "surface_share_claude_code": {
+        "name": "Weekly Claude Code share"
+      },
+      "surface_share_cowork": {
+        "name": "Weekly Cowork share"
+      },
+      "surface_share_other": {
+        "name": "Weekly other share"
+      },
+      "surface_usage": {
+        "name": "Weekly usage by surface"
+      },
       "time_to_limit": {
         "name": "Time to limit"
       },

@@ -15,7 +15,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfTime
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
@@ -26,8 +26,11 @@ from .const import (
     ATTR_MODEL,
     ATTR_MODELS,
     ATTR_RESETS_AT,
+    ATTR_SURFACES,
     ATTR_WINDOW,
+    ATTR_WINDOW_STARTED_AT,
     DOMAIN,
+    KNOWN_SURFACES,
     OVERAGE_SEVERITIES,
     PACE_FRAMES,
 )
@@ -44,6 +47,9 @@ PARALLEL_UPDATES = 0
 PERCENT_PER_HOUR = "%/h"
 PERCENT_PER_MINUTE = "%/min"
 PACE_RATIO = "x"
+# Key prefix of the per-surface share sensors. It differs from "surface_" so a
+# surface named "usage" cannot collide with the surface_usage sensor.
+SHARE_KEY_PREFIX = "share_"
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -79,6 +85,20 @@ def _model_attrs(data: ClawdmeterData) -> dict[str, Any] | None:
         ATTR_RESETS_AT: data.model_reset,
         ATTR_ALLOWANCE: data.model_allowance,
         ATTR_MODELS: data.model_usages,
+    }
+
+
+def _surface_attrs(data: ClawdmeterData) -> dict[str, Any] | None:
+    """List every surface's share of the week next to the Claude Code one.
+
+    The breakdown's ``as_of`` is left out on purpose: it changes on every poll
+    and would make the recorder write a new state each time.
+    """
+    if not data.surface_usages:
+        return None
+    return {
+        ATTR_SURFACES: data.surface_usages,
+        ATTR_WINDOW_STARTED_AT: data.surface_window_start,
     }
 
 
@@ -301,6 +321,7 @@ SENSORS: tuple[ClawdmeterSensorEntityDescription, ...] = (
     ClawdmeterSensorEntityDescription(
         key="runway_margin",
         translation_key="runway_margin",
+        device_class=SensorDeviceClass.DURATION,
         native_unit_of_measurement=UnitOfTime.MINUTES,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=0,
@@ -326,6 +347,17 @@ SENSORS: tuple[ClawdmeterSensorEntityDescription, ...] = (
         exists_fn=lambda coordinator: bool(coordinator.models_seen),
     ),
     ClawdmeterSensorEntityDescription(
+        key="surface_usage",
+        translation_key="surface_usage",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data.surface_usage,
+        attrs_fn=_surface_attrs,
+        exists_fn=lambda coordinator: bool(coordinator.surfaces_seen),
+    ),
+    ClawdmeterSensorEntityDescription(
         key="pace_frame",
         translation_key="pace_frame",
         device_class=SensorDeviceClass.ENUM,
@@ -344,7 +376,7 @@ async def async_setup_entry(
     """Set up the Clawdmeter sensors."""
     coordinator = entry.runtime_data
     entity_registry = er.async_get(hass)
-    entities: list[ClawdmeterSensor] = []
+    entities: list[SensorEntity] = []
     without_data: list[str] = []
     for description in SENSORS:
         entity_id = entity_registry.async_get_entity_id(
@@ -359,7 +391,39 @@ async def async_setup_entry(
         elif entity_id is not None:
             entities.append(ClawdmeterSensor(coordinator, entry, description))
             without_data.append(entity_id)
+
+    # One share sensor per surface key, kept by the same rule as above.
+    share_prefix = f"{entry.entry_id}_{SHARE_KEY_PREFIX}"
+    registered = {
+        reg.unique_id.removeprefix(share_prefix): reg.entity_id
+        for reg in er.async_entries_for_config_entry(entity_registry, entry.entry_id)
+        if reg.domain == SENSOR_DOMAIN and reg.unique_id.startswith(share_prefix)
+    }
+    without_data.extend(
+        entity_id
+        for surface, entity_id in registered.items()
+        if surface not in coordinator.surfaces_seen
+    )
+    surfaces_added = set(registered) | coordinator.surfaces_seen
+    entities.extend(
+        ClawdmeterSurfaceSensor(coordinator, entry, surface)
+        for surface in sorted(surfaces_added)
+    )
     async_add_entities(entities)
+
+    @callback
+    def _add_new_surfaces() -> None:
+        """Add a sensor for a surface key that first appears after setup."""
+        new = coordinator.surfaces_seen - surfaces_added
+        if not new:
+            return
+        surfaces_added.update(new)
+        async_add_entities(
+            ClawdmeterSurfaceSensor(coordinator, entry, surface)
+            for surface in sorted(new)
+        )
+
+    entry.async_on_unload(coordinator.async_add_listener(_add_new_surfaces))
 
     # After a plan change the user decides whether those go.
     if without_data and coordinator.plan_changed_from is not None:
@@ -404,3 +468,33 @@ class ClawdmeterSensor(ClawdmeterEntity, SensorEntity):
         if self.entity_description.unit_fn is not None:
             return self.entity_description.unit_fn(self.coordinator.data)
         return self.entity_description.native_unit_of_measurement
+
+
+class ClawdmeterSurfaceSensor(ClawdmeterEntity, SensorEntity):
+    """One surface's share of the week's usage, in points of 100."""
+
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 0
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+        self,
+        coordinator: ClawdmeterDataUpdateCoordinator,
+        entry: ClawdmeterConfigEntry,
+        surface: str,
+    ) -> None:
+        """Initialise the sensor for one surface key."""
+        super().__init__(coordinator, entry, f"{SHARE_KEY_PREFIX}{surface}")
+        self._surface = surface
+        if surface in KNOWN_SURFACES:
+            self._attr_translation_key = f"surface_share_{surface}"
+        else:
+            self._attr_translation_key = "surface_share"
+            self._attr_translation_placeholders = {"surface": surface.replace("_", " ")}
+
+    @property
+    @override
+    def native_value(self) -> float | None:
+        """Return this surface's share, or None when the last poll had none."""
+        return self.coordinator.data.surface_usages.get(self._surface)

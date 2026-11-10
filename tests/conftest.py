@@ -142,6 +142,16 @@ def usage_payload() -> dict[str, Any]:
             "utilization": 8,
             "resets_at": "2026-06-29T12:00:00+00:00",
         },
+        "seven_day_breakdown": {
+            "as_of": "2026-06-25T12:00:00+00:00",
+            "window_started_at": "2026-06-24T12:00:00+00:00",
+            "rows": [
+                {"key": "claude_code", "display_name": "Claude Code", "percent": 40},
+                {"key": "chat", "display_name": "Chat", "percent": 0},
+                {"key": "cowork", "display_name": "Cowork", "percent": 60},
+                {"key": "other", "display_name": "Other", "percent": 0},
+            ],
+        },
         "extra_usage": {
             "is_enabled": True,
             "utilization": 12,

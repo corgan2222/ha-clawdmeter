@@ -45,6 +45,7 @@ from .const import (
     SAMPLE_RETENTION,
     STORAGE_VERSION,
     STORE_SAVE_DELAY,
+    SURFACE_CLAUDE_CODE,
     TOKEN_EXPIRY_MARGIN,
     WINDOW_SESSION,
     WINDOW_WEEKLY,
@@ -57,6 +58,7 @@ from .limits import (
     as_datetime,
     as_float,
     of_kind,
+    parse_breakdown,
     parse_limits,
     scoped,
     scoped_for,
@@ -124,6 +126,11 @@ class ClawdmeterData:
     model_reset: datetime | None
     model_allowance: float | None
     model_usages: dict[str, float]
+    # The week's usage split by surface. These are shares that add up to 100,
+    # not percentages of a limit. surface_usage is the Claude Code share.
+    surface_usage: float | None
+    surface_usages: dict[str, float]
+    surface_window_start: datetime | None
     extra_enabled: bool | None
     extra_usage: float | None
     extra_credits: float | None
@@ -193,6 +200,8 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
         # Sticky for the same reason: a model whose weekly figure has arrived
         # once keeps its sensors through a poll that happens to omit it.
         self.models_seen: set[str] = set()
+        # Sticky as well: every surface key the weekly breakdown has reported.
+        self.surfaces_seen: set[str] = set()
         # The plan this entry had before, when it changed since the last run.
         self.plan_changed_from: str | None = None
         self._stored_plan: str | None = None
@@ -219,6 +228,7 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
         )
         self._session_seen = False
         self.models_seen.clear()
+        self.surfaces_seen.clear()
         self._samples.clear()
         self._peak_value = None
         self._peak_date = None
@@ -234,6 +244,9 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
         self._peak_date = date.fromisoformat(peak_date) if peak_date else None
         self._session_seen = bool(stored.get("session_seen", False))
         self.models_seen = set(stored.get("models_seen", []))
+        surfaces = stored.get("surfaces_seen")
+        # A development build stored a bare flag here; it carries no keys.
+        self.surfaces_seen = set(surfaces) if isinstance(surfaces, list) else set()
         if "plan" in stored:
             self._stored_plan = stored["plan"]
             return
@@ -293,6 +306,7 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
             "peak_date": self._peak_date.isoformat() if self._peak_date else None,
             "session_seen": self._session_seen,
             "models_seen": sorted(self.models_seen),
+            "surfaces_seen": sorted(self.surfaces_seen),
             "plan": self.config_entry.data.get(CONF_PLAN),
         }
 
@@ -415,6 +429,9 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
             if usage is not None or reset is not None:
                 self.models_seen.add(model)
         self.models_seen.update(row.slug for row in scoped(rows) if row.slug)
+        breakdown = parse_breakdown(raw.get("seven_day_breakdown"))
+        if breakdown is not None:
+            self.surfaces_seen.update(breakdown.shares)
         session_window = WINDOW_SESSION if self._session_seen else None
         if not self._session_seen and self.config_entry.options.get(
             CONF_SESSION_FALLBACK, DEFAULT_SESSION_FALLBACK
@@ -486,6 +503,11 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
                 for row in scoped(rows)
                 if row.label is not None and row.percent is not None
             },
+            surface_usage=(
+                breakdown.shares.get(SURFACE_CLAUDE_CODE) if breakdown else None
+            ),
+            surface_usages=breakdown.shares if breakdown else {},
+            surface_window_start=breakdown.window_started_at if breakdown else None,
             extra_enabled=overage.enabled,
             extra_usage=overage.usage,
             extra_credits=overage.credits,

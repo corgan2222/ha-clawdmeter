@@ -11,6 +11,7 @@ from custom_components.clawdmeter.limits import (
     KIND_WEEKLY_ALL,
     allowances,
     of_kind,
+    parse_breakdown,
     parse_limits,
     scoped,
     scoped_for,
@@ -138,6 +139,53 @@ def test_a_malformed_limits_value_is_not_an_error() -> None:
     assert parse_limits(None) == []
     assert parse_limits({"kind": "session"}) == []
     assert allowances(None, []) == {}
+
+
+def test_the_breakdown_keeps_every_surface_key() -> None:
+    """Test an unknown surface key is passed along like an unknown kind.
+
+    ``other`` is already a catch-all, so the set of keys is expected to grow.
+    """
+    breakdown = parse_breakdown(
+        {
+            "window_started_at": "2026-11-05T14:00:00.125277+00:00",
+            "rows": [
+                {"key": "claude_code", "percent": 40},
+                {"key": "cowork", "percent": 55.5},
+                {"key": "glasses", "percent": "4.5"},
+            ],
+        }
+    )
+
+    assert breakdown.shares == {"claude_code": 40.0, "cowork": 55.5, "glasses": 4.5}
+    assert breakdown.window_started_at.isoformat().startswith("2026-11-05T14:00:00")
+
+
+def test_unusable_breakdown_rows_are_dropped() -> None:
+    """Test a row without a key or a numeric share is left out."""
+    breakdown = parse_breakdown(
+        {
+            "rows": [
+                "not an object",
+                {"percent": 10},
+                {"key": "", "percent": 10},
+                {"key": "chat", "percent": None},
+                {"key": "chat_bool", "percent": True},
+                {"key": "claude_code", "percent": 90},
+            ]
+        }
+    )
+
+    assert breakdown.shares == {"claude_code": 90.0}
+    assert breakdown.window_started_at is None
+
+
+def test_a_missing_breakdown_is_none() -> None:
+    """Test an account without a usable breakdown reports none at all."""
+    assert parse_breakdown(None) is None
+    assert parse_breakdown({"rows": None}) is None
+    assert parse_breakdown({"rows": [{"key": "chat", "percent": None}]}) is None
+    assert parse_breakdown([{"key": "chat", "percent": 5}]) is None
 
 
 def test_the_plan_display_name_wins_over_the_account_flags() -> None:

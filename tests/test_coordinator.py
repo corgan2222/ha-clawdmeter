@@ -45,6 +45,10 @@ RESETS_IN = "sensor.claude_corgan_max_session_resets_in"
 SESSION_USAGE = "sensor.claude_corgan_max_session_usage"
 OPUS_USAGE = "sensor.claude_corgan_max_weekly_opus_usage"
 MODEL_USAGE = "sensor.claude_corgan_max_weekly_model_usage"
+SURFACE_USAGE = "sensor.claude_corgan_max_weekly_usage_by_surface"
+SHARE_CLAUDE_CODE = "sensor.claude_corgan_max_weekly_claude_code_share"
+SHARE_COWORK = "sensor.claude_corgan_max_weekly_cowork_share"
+SHARE_NEW = "sensor.claude_corgan_max_weekly_smart_glasses_share"
 LIMIT_REACHED = "binary_sensor.claude_corgan_max_limit_reached_before_reset"
 
 
@@ -688,6 +692,8 @@ async def test_new_install_skips_sensors_without_data(
     assert hass.states.get(OPUS_USAGE) is None
     assert hass.states.get("sensor.claude_corgan_max_weekly_sonnet_usage") is None
     assert hass.states.get(MODEL_USAGE) is None
+    assert hass.states.get(SURFACE_USAGE) is None
+    assert hass.states.get(SHARE_CLAUDE_CODE) is None
     # Sensors the account does fill are unaffected.
     assert hass.states.get(SESSION_USAGE).state == "10.0"
 
@@ -812,6 +818,86 @@ async def test_per_model_limit_comes_from_the_limits_list(
     assert model.attributes["models"] == {"Opus 4": 62.0, "Fable": 9.0}
     # limit_index counts the raw array, session row included.
     assert model.attributes["allowance_percent_of_weekly"] == 50.0
+
+
+async def test_usage_by_surface_follows_the_breakdown(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+    usage_payload: dict[str, Any],
+) -> None:
+    """Test the surface sensor reports the Claude Code share and all the others.
+
+    A poll without the breakdown keeps the sensor, so a single response that
+    omits it does not make the entity disappear.
+    """
+    aioclient_mock.get(USAGE_ENDPOINT, json=usage_payload)
+    await setup_integration(hass, mock_config_entry)
+
+    surface = hass.states.get(SURFACE_USAGE)
+    assert surface.state == "40.0"
+    assert surface.attributes["surfaces"] == {
+        "claude_code": 40.0,
+        "chat": 0.0,
+        "cowork": 60.0,
+        "other": 0.0,
+    }
+    assert surface.attributes["window_started_at"] == datetime(
+        2026, 6, 24, 12, tzinfo=UTC
+    )
+    assert "as_of" not in surface.attributes
+    # Every surface also has a sensor of its own, for history and statistics.
+    assert hass.states.get(SHARE_CLAUDE_CODE).state == "40.0"
+    assert hass.states.get(SHARE_COWORK).state == "60.0"
+
+    # Without a Claude Code row the other shares still arrive, the state does
+    # not invent a zero. A key first seen now gets its sensor without a reload.
+    usage_payload["seven_day_breakdown"]["rows"] = [
+        {"key": "cowork", "percent": 90},
+        {"key": "smart_glasses", "percent": 10},
+    ]
+    aioclient_mock.clear_requests()
+    aioclient_mock.get(USAGE_ENDPOINT, json=usage_payload)
+    await mock_config_entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+
+    surface = hass.states.get(SURFACE_USAGE)
+    assert surface.state == STATE_UNKNOWN
+    assert surface.attributes["surfaces"] == {"cowork": 90.0, "smart_glasses": 10.0}
+    assert hass.states.get(SHARE_CLAUDE_CODE).state == STATE_UNKNOWN
+    assert hass.states.get(SHARE_NEW).state == "10.0"
+
+    await _push_usage(hass, aioclient_mock, mock_config_entry, 10)
+
+    surface = hass.states.get(SURFACE_USAGE)
+    assert surface.state == STATE_UNKNOWN
+    assert "surfaces" not in surface.attributes
+    assert hass.states.get(SHARE_COWORK).state == STATE_UNKNOWN
+
+
+async def test_surface_sensors_come_back_after_a_restart(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+    hass_storage: dict[str, Any],
+) -> None:
+    """Test the remembered surface keys keep their sensors through a restart.
+
+    The first poll after the restart omits the breakdown, so only the stored
+    keys can bring the sensors back.
+    """
+    hass_storage[f"clawdmeter.{mock_config_entry.entry_id}"] = {
+        "version": 1,
+        "minor_version": 1,
+        "key": f"clawdmeter.{mock_config_entry.entry_id}",
+        "data": {"samples": [], "surfaces_seen": ["claude_code"], "plan": "Max"},
+    }
+    aioclient_mock.get(USAGE_ENDPOINT, json=_session_payload(10))
+    await setup_integration(hass, mock_config_entry)
+
+    assert hass.states.get(SURFACE_USAGE).state == STATE_UNKNOWN
+    assert hass.states.get(SHARE_CLAUDE_CODE).state == STATE_UNKNOWN
+    assert hass.states.get(SHARE_COWORK) is None
 
 
 async def test_logs_when_usage_data_missing(

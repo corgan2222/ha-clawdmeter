@@ -37,6 +37,32 @@
         'resets_at': '2026-07-01T12:00:00+00:00',
         'utilization': 40,
       }),
+      'seven_day_breakdown': dict({
+        'as_of': '2026-06-25T12:00:00+00:00',
+        'rows': list([
+          dict({
+            'display_name': 'Claude Code',
+            'key': 'claude_code',
+            'percent': 40,
+          }),
+          dict({
+            'display_name': 'Chat',
+            'key': 'chat',
+            'percent': 0,
+          }),
+          dict({
+            'display_name': 'Cowork',
+            'key': 'cowork',
+            'percent': 60,
+          }),
+          dict({
+            'display_name': 'Other',
+            'key': 'other',
+            'percent': 0,
+          }),
+        ]),
+        'window_started_at': '2026-06-24T12:00:00+00:00',
+      }),
       'seven_day_opus': dict({
         'resets_at': '2026-06-29T12:00:00+00:00',
         'utilization': 8,
@@ -93,6 +119,14 @@
       'session_window': 'session',
       'sonnet_reset': HAFakeDatetime(2026, 6, 30, 12, 0, tzinfo=datetime.timezone.utc),
       'sonnet_usage': 15.0,
+      'surface_usage': 40.0,
+      'surface_usages': dict({
+        'chat': 0.0,
+        'claude_code': 40.0,
+        'cowork': 60.0,
+        'other': 0.0,
+      }),
+      'surface_window_start': HAFakeDatetime(2026, 6, 24, 12, 0, tzinfo=datetime.timezone.utc),
       'time_to_limit': None,
       'usage_rate': 0.0,
       'week_pace': 25.7,
