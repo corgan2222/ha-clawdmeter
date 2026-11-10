@@ -321,6 +321,7 @@ SENSORS: tuple[ClawdmeterSensorEntityDescription, ...] = (
     ClawdmeterSensorEntityDescription(
         key="runway_margin",
         translation_key="runway_margin",
+        device_class=SensorDeviceClass.DURATION,
         native_unit_of_measurement=UnitOfTime.MINUTES,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=0,
