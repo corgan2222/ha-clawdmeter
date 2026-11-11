@@ -67,6 +67,11 @@ from .limits import (
 type ClawdmeterConfigEntry = ConfigEntry[ClawdmeterDataUpdateCoordinator]
 
 WEEK_SECONDS = 7 * 24 * 60 * 60
+# Hours added to the elapsed time before the weekly average rate is taken. Right
+# after the reset a few minutes of use would otherwise be extrapolated across
+# the whole week, so a single percent turned the pace frame red. The padding
+# fades as the week goes on and the rate converges on the true average.
+WEEK_RATE_DAMPING_HOURS = 24.0
 
 
 def account_title(name: str | None, plan: str | None) -> str:
@@ -465,7 +470,7 @@ class ClawdmeterDataUpdateCoordinator(DataUpdateCoordinator[ClawdmeterData]):
         # The 30-minute burn rate says how fast usage moves right now, the right
         # horizon for a five-hour window. Across a week it is zero most of the
         # time and would leave every projection empty, so the weekly window
-        # projects from its average since the week opened instead.
+        # projects from its damped average since the week opened instead.
         projection_rate: float | None = burn_slow
         if session_window == WINDOW_WEEKLY:
             projection_rate = _average_rate(session_usage, session_reset, now)
@@ -731,13 +736,17 @@ def _week_pace(
 def _average_rate(
     usage: float | None, reset: datetime | None, now: datetime
 ) -> float | None:
-    """Return the mean usage in %/h since the weekly window opened."""
+    """Return the damped mean usage in %/h since the weekly window opened.
+
+    The elapsed time is padded by ``WEEK_RATE_DAMPING_HOURS``, so the first
+    hours after a reset do not dominate the projection.
+    """
     if usage is None or reset is None:
         return None
     elapsed_hours = _week_elapsed(reset, now) / 3600
-    if elapsed_hours <= 0:
+    if elapsed_hours < 0:
         return None
-    return usage / elapsed_hours
+    return usage / (elapsed_hours + WEEK_RATE_DAMPING_HOURS)
 
 
 def _minutes_until(target: datetime | None, now: datetime) -> float | None:

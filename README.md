@@ -138,11 +138,15 @@ keep history graphs continuous and meaningful:
 | Pace frame · Animation group | `green` · `idle` | Calm creature |
 | Limit reached before reset | `off` | Nothing at risk |
 | Time to limit · Runway margin | `unknown` | No ETA exists while usage is flat — a `0` would wrongly read as "at the limit now" |
+| Usage %, resets, extra usage | live API value | Reflect the account regardless of activity |
 
 Accounts without a five-hour window project from the weekly window instead (their
 `window` attribute reads `weekly`). There the projections use the average rate since the
 week opened rather than the last 30 minutes, so they stay populated while you are idle.
-| Usage %, resets, extra usage | live API value | Reflect the account regardless of activity |
+That average counts 24 extra hours, so the first minutes after a reset are not
+extrapolated across the whole week. A red pace frame then means the limit is reached
+before the reset at the usage so far; Week pace still shows how far you are ahead of a
+linear week.
 
 ## 🔄 How data is updated
 
