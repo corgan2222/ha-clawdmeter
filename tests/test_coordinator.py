@@ -573,7 +573,7 @@ async def test_weekly_projection_uses_the_average_rate(
     week is most of the time, so it would leave the projections empty.
     """
     freezer.move_to("2026-06-25T12:00:00+00:00")
-    # 16 % used, 48 h into the week, 120 h left: 1/3 %/h on average.
+    # 16 % used, 48 h into the week plus 24 h damping, 120 h left: 2/9 %/h.
     aioclient_mock.get(
         USAGE_ENDPOINT,
         json={
@@ -582,14 +582,52 @@ async def test_weekly_projection_uses_the_average_rate(
     )
     await setup_integration(hass, mock_config_entry)
 
-    # 84 % left at 1/3 %/h is 252 h.
-    assert float(hass.states.get(TIME_TO_LIMIT).state) == pytest.approx(252 * 60)
-    assert float(hass.states.get(RUNWAY_MARGIN).state) == pytest.approx(132 * 60)
+    # 84 % left at 2/9 %/h is 378 h.
+    assert float(hass.states.get(TIME_TO_LIMIT).state) == pytest.approx(378 * 60)
+    assert float(hass.states.get(RUNWAY_MARGIN).state) == pytest.approx(258 * 60)
     assert hass.states.get(LIMIT_REACHED).state == "off"
     assert hass.states.get(LIMIT_ETA).state != STATE_UNKNOWN
     assert hass.states.get(PACE_FRAME).state == "green"
     # The burn rate still reports the current activity, not the average.
     assert float(hass.states.get(BURN_30M).state) == 0.0
+
+
+@pytest.mark.parametrize(
+    ("now", "usage", "frame", "reached"),
+    [
+        # 12 minutes after the reset: one percent is no reason for alarm.
+        ("2026-06-23T12:12:00+00:00", 1, "green", "off"),
+        # Six hours in, still within the first day's noise.
+        ("2026-06-23T18:00:00+00:00", 4, "green", "off"),
+        # 20 % in the first ten hours does reach the limit before the reset.
+        ("2026-06-23T22:00:00+00:00", 20, "red", "on"),
+    ],
+)
+async def test_weekly_projection_right_after_the_reset(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+    freezer: FrozenDateTimeFactory,
+    now: str,
+    usage: float,
+    frame: str,
+    reached: str,
+) -> None:
+    """Test the first hours of a week are not extrapolated across all of it."""
+    freezer.move_to(now)
+    aioclient_mock.get(
+        USAGE_ENDPOINT,
+        json={
+            "seven_day": {
+                "utilization": usage,
+                "resets_at": "2026-06-30T12:00:00+00:00",
+            }
+        },
+    )
+    await setup_integration(hass, mock_config_entry)
+
+    assert hass.states.get(PACE_FRAME).state == frame
+    assert hass.states.get(LIMIT_REACHED).state == reached
 
 
 @pytest.mark.account_refresh
